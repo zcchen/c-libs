@@ -51,7 +51,8 @@ ENDIF ()
 ######################## Running Dependanies Settings ################
 ######################################################################
 INCLUDE(CTest)
-ADD_SUBDIRECTORY("ringbuf")
-ADD_SUBDIRECTORY("enumkv")
-ADD_SUBDIRECTORY("serialhex2struct")
+ADD_SUBDIRECTORY(ringbuf)
+ADD_SUBDIRECTORY(enumkv)
+ADD_SUBDIRECTORY(serialhex2struct)
+ADD_SUBDIRECTORY(class)
 
