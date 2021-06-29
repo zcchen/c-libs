@@ -12,10 +12,8 @@ int test_class_fork__chain(size_t level)
     struct class_t *base = NULL;        // setup multi level class_t object
     for (size_t i = 0; i < level; ++i) {
         struct class_t *child = class_create();
-        if (base) {
-            class_fork_chain(base, child);  // fork the new one.
-            class_destroy(base);            // destroy the old ones
-        }
+        class_fork_chain(base, NULL, child);  // fork the new one.
+        class_destroy(base);            // destroy the old ones
         base = child;                       // move the pointer to old ones for loop
     }
 
@@ -23,15 +21,16 @@ int test_class_fork__chain(size_t level)
     struct class_t *fork = class_create();
 
     printf(">>> forking ...\n");
-    class_fork_chain(base, fork);
+    class_fork_chain(base, NULL, fork);
 
     printf(">>> Asserting the class inherited levels ...\n");
     printf(">>> class_get_level(base): %ld\n", class_get_level(base));
     printf(">>> class_get_level(fork): %ld\n", class_get_level(fork));
     assert(class_get_level(base) + 1 == class_get_level(fork));
 
-    printf(">>> destroying the base and fork ...\n");
+    printf(">>> destroying the base ... \n");
     class_destroy(base);
+    printf(">>> destroying the fork ... \n");
     class_destroy(fork);
 
     printf("------------------------------------------------------------\n");
@@ -47,7 +46,7 @@ int test_class_fork__list(size_t level)
     for (size_t i = 0; i < level; ++i) {
         struct class_t *child = class_create();
         if (base) {
-            class_fork_chain(base, child);  // fork the new one.
+            class_fork_chain(base, NULL, child);  // fork the new one.
             class_destroy(base);            // destroy the old ones
         }
         base = child;                       // move the pointer to old ones for loop
@@ -57,7 +56,7 @@ int test_class_fork__list(size_t level)
     struct class_t fork[level + 1];
 
     printf(">>> forking ...\n");
-    class_fork_list(base, fork, level + 1);
+    class_fork_list(base, NULL, fork, level + 1);
 
     printf(">>> Asserting the class inherited levels ...\n");
     printf(">>> class_get_level(base): %ld\n", class_get_level(base));

@@ -52,7 +52,7 @@ int test_class_init__base()
     class_set_func_user(&base, 0, class_obj__func0);
     class_call_func_setup(&base);
     class_call_func_clean(&base);
-    class_call_func_user(&base, 0, NULL, 0);
+    class_call_func_user(&base, 0, true, NULL, 0);
     return 0;
 }
 

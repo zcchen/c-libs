@@ -22,6 +22,7 @@ struct class_t {
     void *obj;
     size_t size;
     struct class_t *parent;
+    struct class_t *child;
     struct {
         struct {
             int (* setup)(void* self, const size_t self_size);    // constructor
@@ -57,15 +58,17 @@ int class_set_func_user(struct class_t *cls, const size_t func_id,
 
 // copy the `base` and its parent chain to the `fork_list`, new child at 0, parent is +1.
 // list size should be have at least 1 more empty element for new fork.
-int class_fork_list(struct class_t *base, struct class_t *fork_list, const size_t list_size);
+int class_fork_list(struct class_t *base, void* new_obj_from_base,
+                    struct class_t *fork_list, const size_t list_size);
 
 // initialize the `fork` pointer and set its parent to base.
-int class_fork_chain(struct class_t *base, struct class_t *fork);
+int class_fork_chain(struct class_t *base, void* new_obj_from_base, struct class_t *fork);
 
 // call the function from inside to outside
 int class_call_func_setup(struct class_t *cls);
 int class_call_func_clean(struct class_t *cls);
-int class_call_func_user(struct class_t *cls, const size_t id, void* param, const size_t param_size);
+int class_call_func_user(struct class_t *cls, const size_t id, const bool include_parent,
+                         void* param, const size_t param_size);
 
 // return the inherit level from this cls to top.
 const size_t class_get_level(struct class_t *cls);
@@ -79,7 +82,7 @@ struct class_t* class_get_parent(struct class_t *cls);
 
 // NOTE: usually don't use the following methods.
 void* class_get_obj_instance(struct class_t *cls);
-size_t class_get_obj_size(struct class_t *cls);
+const size_t class_get_obj_size(struct class_t *cls);
 
 #ifdef __cplusplus
 extern }

@@ -14,10 +14,14 @@ struct class_t* class_create()
 
 void class_destroy(struct class_t *cls)
 {
-    if (cls) {
-        class_call_func_clean(cls);
+    if (!cls) {     // no need to do anything for NULL
+        return;
     }
     struct class_t *walk_cls = cls;
+    while (walk_cls->child) {   // walk to the bottom of this class chain
+        walk_cls = walk_cls->child;
+    }
+    class_call_func_clean(walk_cls);
     while (walk_cls) {
         struct class_t *ptr = walk_cls;
         walk_cls = walk_cls->parent;
@@ -31,6 +35,7 @@ int class_init(struct class_t *cls)
     cls->obj = NULL;
     cls->size = 0;
     cls->parent = NULL;
+    cls->child = NULL;
     cls->methods.base.setup = NULL;
     cls->methods.base.clean = NULL;
     for (int j = 0; j < CLASS_MAX_USER_METHODS; ++j) {
@@ -71,35 +76,39 @@ int class_set_func_user(struct class_t *cls, const size_t func_id,
     return CLASS_OK;
 }
 
-int class_fork_list(struct class_t *base, struct class_t *fork_list, const size_t list_size)
+int class_fork_list(struct class_t *base, void* new_obj_from_base,
+                    struct class_t *fork_list, const size_t list_size)
 {
     const size_t base_level = class_get_level(base);
     if (base_level + 1 > list_size) {
         return CLASS_ERR_MEMORY_HAVE_NOT_ALLOCATED;
     }
     for (int i = 0; i < list_size; ++i) {
-        class_init(&fork_list[i]);  // init all
+        class_init(&fork_list[i]);  // init all, including 1st one.
     }
     struct class_t *walk_base = base;
     struct class_t *walk_fork = &fork_list[0];
     for (int i = 1; i < list_size && walk_base; ++i) {
         walk_fork->parent = &fork_list[i];
         memcpy(walk_fork->parent, walk_base, sizeof(struct class_t));
+        walk_fork->parent->obj = new_obj_from_base;
+        walk_fork->parent->child = walk_fork;
         walk_fork = walk_fork->parent;
         walk_base = walk_base->parent;
     }
     return CLASS_OK;
 }
 
-int class_fork_chain(struct class_t *base, struct class_t *fork)
+int class_fork_chain(struct class_t *base, void* new_obj_from_base, struct class_t *fork)
 {
     class_init(fork);       // init the new working obj
     struct class_t *walk_fork = fork;
     struct class_t *walk_base = base;
     while (walk_base) {
-        // prepare the parent object for base's last node.*/
-        walk_fork->parent = class_create();
+        walk_fork->parent = class_create();     // create one to hold the base's final node.
         memcpy(walk_fork->parent, walk_base, sizeof(struct class_t));
+        walk_fork->parent->obj = new_obj_from_base; // replace the cls->obj with new one
+        walk_fork->parent->child = walk_fork;       // link current as parent's child
         walk_fork = walk_fork->parent;
         walk_base = walk_base->parent;
     }
@@ -110,7 +119,10 @@ int class_fork_chain(struct class_t *base, struct class_t *fork)
 int class_call_func_setup(struct class_t *cls)
 {
     struct class_t *walk_cls = cls;
-    while (walk_cls) {
+    while (walk_cls) {              // walk to top first
+        walk_cls = walk_cls->parent;
+    }
+    while (walk_cls) {  // walk to bottom, and exec the function
         int ret = 0;
         if (walk_cls->methods.base.setup) {
             ret = walk_cls->methods.base.setup(&walk_cls->obj, walk_cls->size);
@@ -118,7 +130,7 @@ int class_call_func_setup(struct class_t *cls)
                 return ret;
             }
         }
-        walk_cls = walk_cls->parent;
+        walk_cls = walk_cls->child;
     }
     return CLASS_OK;
 }
@@ -139,14 +151,21 @@ int class_call_func_clean(struct class_t *cls)
     return CLASS_OK;
 }
 
-int class_call_func_user(struct class_t *cls, const size_t id,
+int class_call_func_user(struct class_t *cls, const size_t id, const bool include_parent,
                          void* param, const size_t param_size)
 {
     if (id >= CLASS_MAX_USER_METHODS) {
         return CLASS_ERR_OVER_MAX_USER_METHODS;
     }
     struct class_t *walk_cls = cls;
-    while (walk_cls) {
+    if (!include_parent) {
+        return walk_cls->methods.user.func[id](&walk_cls->obj, walk_cls->size,
+                                               param, param_size);
+    }
+    while (walk_cls) {              // walk to top first
+        walk_cls = walk_cls->parent;
+    }
+    while (walk_cls) {  // walk to bottom, and exec the function
         int ret = 0;
         if (walk_cls->methods.user.func[id]) {
             ret = walk_cls->methods.user.func[id](
@@ -156,7 +175,7 @@ int class_call_func_user(struct class_t *cls, const size_t id,
                 return ret;
             }
         }
-        walk_cls = walk_cls->parent;
+        walk_cls = walk_cls->child;
     }
     return CLASS_OK;
 }
@@ -182,7 +201,7 @@ void* class_get_obj_instance(struct class_t *cls)
     return cls->obj;
 }
 
-size_t class_get_obj_size(struct class_t *cls)
+const size_t class_get_obj_size(struct class_t *cls)
 {
     return cls->size;
 }
