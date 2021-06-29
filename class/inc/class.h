@@ -9,7 +9,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define CLASS_MAX_INHERIT_LEVEL 4
+//#define CLASS_MAX_INHERIT_LEVEL 4
 #define CLASS_MAX_USER_METHODS  16
 
 struct class_t {
@@ -19,29 +19,32 @@ struct class_t {
             uint8_t lock: 1;
         } bits;
     } status;
-    void *obj[CLASS_MAX_INHERIT_LEVEL];
-    size_t size[CLASS_MAX_INHERIT_LEVEL];
-    size_t inherit_level;
+    void *obj;
+    size_t size;
+    struct class_t *parent;
     struct {
         struct {
             int (* setup)(void* self, const size_t self_size);    // constructor
             int (* clean)(void* self, const size_t self_size);    // deconstructor
-        } base[CLASS_MAX_INHERIT_LEVEL];
+        } base;
         struct {
             int (* func[CLASS_MAX_USER_METHODS])(void* self, const size_t self_size,
                                                  void* param, const size_t param_size);
-        } user[CLASS_MAX_INHERIT_LEVEL];
-        size_t func_used;
+        } user;
     } methods;
 };
 
 enum class_err_t {
     CLASS_OK = 0,
     CLASS_ERR_UNKNOWN = 1,
-    CLASS_ERR_OVER_MAX_INHERIT_LEVEL,
     CLASS_ERR_OVER_MAX_USER_METHODS,
     CLASS_ERR_NULL_POINTER,
+    CLASS_ERR_MEMORY_HAVE_NOT_ALLOCATED,
 };
+
+// memory operation the the class struct
+struct class_t* class_create();
+void class_destroy(struct class_t *cls);
 
 int class_init(struct class_t *cls);
 
@@ -49,31 +52,34 @@ int class_init(struct class_t *cls);
 int class_set_obj(struct class_t *cls, void* obj, const size_t size);
 int class_set_func_base(struct class_t *cls,
                         int (* setup)(void*, const size_t), int (* clean)(void*, const size_t));
-int class_set_func_fork(struct class_t *cls, const size_t func_id,
+int class_set_func_user(struct class_t *cls, const size_t func_id,
                         int (* func)(void*, const size_t, void*, const size_t));
-// finish the current level setup, go to next;
-int class_set_next(struct class_t *cls);
 
-// copy current from base to fork
-int class_fork(struct class_t *base, struct class_t *fork);
+// copy the `base` and its parent chain to the `fork_list`, new child at 0, parent is +1.
+// list size should be have at least 1 more empty element for new fork.
+int class_fork2list(struct class_t *base, struct class_t *fork_list, const size_t list_size);
+
+// initialize the `fork` pointer and set its parent to base.
+int class_fork2chain(struct class_t *base, struct class_t *fork);
 
 // call the function from inside to outside
 int class_call_func_setup(struct class_t *cls);
 int class_call_func_clean(struct class_t *cls);
 int class_call_func_user(struct class_t *cls, const size_t id, void* param, const size_t param_size);
 
-// get the max level which is already inherit.
-const size_t class_get_maxlevel(struct class_t *cls);
+// return the inherit level from this cls to top.
+const size_t class_get_level(struct class_t *cls);
+
+struct class_t* class_get_parent(struct class_t *cls);
 
 // get and convert the specified level objects
-#define class_get_obj(cls, level, type)                 \
-    (class_get_obj_size(cls, level) == sizeof(type) ?   \
-            (type*)(class_get_obj_instance(cls, level)) : NULL)
+#define class_get_obj(cls, type)    \
+    (class_get_obj_size(cls) == sizeof(type) ? (type*)(class_get_obj_instance(cls)) : NULL)
 
 
 // NOTE: usually don't use the following methods.
-void* class_get_obj_instance(struct class_t *cls, const size_t level);
-size_t class_get_obj_size(struct class_t *cls, const size_t level);
+void* class_get_obj_instance(struct class_t *cls);
+size_t class_get_obj_size(struct class_t *cls);
 
 #ifdef __cplusplus
 extern }

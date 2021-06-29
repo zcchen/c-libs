@@ -1,5 +1,6 @@
 FIND_PROGRAM(MEMORYCHECK_COMMAND valgrind )
-SET(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full" )
+#SET(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full" )
+SET(MEMORYCHECK_COMMAND_OPTIONS "" )
 SET(MEMORYCHECK_SUPPRESSIONS_FILE "${PROJECT_SOURCE_DIR}/valgrind_suppress.txt" )
 
 FILE(GLOB_RECURSE src_tests "*.c")
@@ -19,5 +20,15 @@ FOREACH(_test_file IN LISTS src_tests)
     TARGET_COMPILE_OPTIONS(test_${LIBNAME}_${_prg_filename} PRIVATE $<$<CONFIG:Debug>:DEBUG_BUILD>)
 
     ADD_TEST(NAME test_${LIBNAME}_${_prg_filename} COMMAND test_${LIBNAME}_${_prg_filename})
+
+    if(NOT MEMORYCHECK_COMMAND)
+        # skip the memory check.
+    else()
+        SET(MEMCHECK_BIN ${MEMORYCHECK_COMMAND} ${MEMORYCHECK_COMMAND_OPTIONS})
+        ADD_TEST(NAME memtest_${LIBNAME}_${_prg_filename}
+                 COMMAND ${MEMCHECK_BIN} ./test_${LIBNAME}_${_prg_filename}
+                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    endif()
 ENDFOREACH()
 
