@@ -1,5 +1,7 @@
 #include "object.h"
 
+#include <stdlib.h>
+
 struct object_t* object_create()
 {
     struct object_t *ret = malloc(sizeof(struct object_t));

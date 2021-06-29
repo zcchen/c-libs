@@ -1,11 +1,12 @@
 #ifndef CTOOLINGS_OBJECT_H
 #define CTOOLINGS_OBJECT_H
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdlib.h>
 
 enum object_err_t {
     OBJECT_OK = 0,
