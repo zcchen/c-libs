@@ -58,8 +58,10 @@ int test_class_init__base()
 
 int test_class_init__create_and_destroy()
 {
+    printf("---- testing the class_t create() & destroy () -------\n");
     struct class_t *base = class_create();
     class_destroy(base);
+    printf("------------------------------------------------------\n");
     return 0;
 }
 

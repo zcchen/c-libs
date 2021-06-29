@@ -57,10 +57,10 @@ int class_set_func_user(struct class_t *cls, const size_t func_id,
 
 // copy the `base` and its parent chain to the `fork_list`, new child at 0, parent is +1.
 // list size should be have at least 1 more empty element for new fork.
-int class_fork2list(struct class_t *base, struct class_t *fork_list, const size_t list_size);
+int class_fork_list(struct class_t *base, struct class_t *fork_list, const size_t list_size);
 
 // initialize the `fork` pointer and set its parent to base.
-int class_fork2chain(struct class_t *base, struct class_t *fork);
+int class_fork_chain(struct class_t *base, struct class_t *fork);
 
 // call the function from inside to outside
 int class_call_func_setup(struct class_t *cls);

@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <stdio.h>
+
 struct class_t* class_create()
 {
     struct class_t* ret = malloc(sizeof(struct class_t));
@@ -15,7 +17,12 @@ void class_destroy(struct class_t *cls)
     if (cls) {
         class_call_func_clean(cls);
     }
-    free(cls);
+    struct class_t *walk_cls = cls;
+    while (walk_cls) {
+        struct class_t *ptr = walk_cls;
+        walk_cls = walk_cls->parent;
+        free(ptr);
+    }
 }
 
 int class_init(struct class_t *cls)
@@ -64,43 +71,38 @@ int class_set_func_user(struct class_t *cls, const size_t func_id,
     return CLASS_OK;
 }
 
-int class_fork2list(struct class_t *base, struct class_t *fork_list, const size_t list_size)
+int class_fork_list(struct class_t *base, struct class_t *fork_list, const size_t list_size)
 {
     const size_t base_level = class_get_level(base);
     if (base_level + 1 > list_size) {
         return CLASS_ERR_MEMORY_HAVE_NOT_ALLOCATED;
     }
     for (int i = 0; i < list_size; ++i) {
-        class_init(&fork_list[i]);   // init all
+        class_init(&fork_list[i]);  // init all
     }
-    fork_list[0].parent = &fork_list[1];
-    // copy the base chains to fork_list, since [1] to [...]
     struct class_t *walk_base = base;
-    struct class_t *walk_fork = &fork_list[1];
-    for (int i = 1; i < list_size; ++i) {
-        memcpy(&walk_fork, walk_base, sizeof(struct class_t));
-        if (walk_base->parent) {
-            walk_fork->parent = &fork_list[i + 1];  // new parent is next value.
-        }
-        walk_base = walk_base->parent;
+    struct class_t *walk_fork = &fork_list[0];
+    for (int i = 1; i < list_size && walk_base; ++i) {
+        walk_fork->parent = &fork_list[i];
+        memcpy(walk_fork->parent, walk_base, sizeof(struct class_t));
         walk_fork = walk_fork->parent;
+        walk_base = walk_base->parent;
     }
     return CLASS_OK;
 }
 
-int class_fork2chain(struct class_t *base, struct class_t *fork)
+int class_fork_chain(struct class_t *base, struct class_t *fork)
 {
+    class_init(fork);       // init the new working obj
+    struct class_t *walk_fork = fork;
     struct class_t *walk_base = base;
-    class_init(fork);
-    fork->parent = class_create();
-    struct class_t *walk_fork = fork->parent;
-    do {
-        memcpy(walk_fork, walk_base, sizeof(struct class_t));
-        if (walk_base->parent) {
-            walk_fork->parent = class_create();
-            walk_fork = walk_fork->parent;
-        }
-    } while (walk_base->parent);
+    while (walk_base) {
+        // prepare the parent object for base's last node.*/
+        walk_fork->parent = class_create();
+        memcpy(walk_fork->parent, walk_base, sizeof(struct class_t));
+        walk_fork = walk_fork->parent;
+        walk_base = walk_base->parent;
+    }
     return CLASS_OK;
 }
 
@@ -161,9 +163,9 @@ int class_call_func_user(struct class_t *cls, const size_t id,
 
 const size_t class_get_level(struct class_t *cls)
 {
-    size_t ret = 1;
+    size_t ret = 0;
     struct class_t *walk_cls = cls;
-    while (walk_cls->parent) {
+    while (walk_cls) {
         ret ++;
         walk_cls = walk_cls->parent;
     }

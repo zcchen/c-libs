@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 ######################## Global CMake Flags Here #####################
 INCLUDE(cmake/settings.cmake)
-SET(DEBUG FALSE)
+SET(DEBUG TRUE)
 SET(RELEASE FALSE)
 SET(PROJECT_NAME c_toolings)
 SET(PROJECT_VERSION_MAJOR 0)
