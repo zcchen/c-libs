@@ -3,8 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <stdio.h>
-
 struct class_t* class_create()
 {
     struct class_t* ret = malloc(sizeof(struct class_t));
@@ -157,11 +155,13 @@ int class_call_func_user(struct class_t *cls, const size_t id, const bool includ
     if (id >= CLASS_MAX_USER_METHODS) {
         return CLASS_ERR_OVER_MAX_USER_METHODS;
     }
-    struct class_t *walk_cls = cls;
     if (!include_parent) {
-        return walk_cls->methods.user.func[id](&walk_cls->obj, walk_cls->size,
-                                               param, param_size);
+        if (cls->methods.user.func[id]) {
+            return cls->methods.user.func[id](cls->obj, cls->size, param, param_size);
+        }
+        return CLASS_OK;
     }
+    struct class_t *walk_cls = cls;
     while (walk_cls) {              // walk to top first
         walk_cls = walk_cls->parent;
     }
