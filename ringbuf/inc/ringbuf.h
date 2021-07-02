@@ -1,5 +1,5 @@
-#ifndef CTOOLINGS_RINGBUGH_H
-#define CTOOLINGS_RINGBUGH_H
+#ifndef ZCCHEN_CLIBS__RINGBUF_H
+#define ZCCHEN_CLIBS__RINGBUF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,4 +37,4 @@ int ringbuf_pop(volatile struct ringbuf_t *ringbuf, uint8_t *linebuf, size_t lin
 extern }
 #endif
 
-#endif /* ifndef CTOOLINGS_RINGBUGH_H */
+#endif /* ifndef ZCCHEN_CLIBS__RINGBUF_H */

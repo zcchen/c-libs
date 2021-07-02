@@ -1,5 +1,5 @@
-#ifndef CTOOLINGS_OBJECT_H
-#define CTOOLINGS_OBJECT_H
+#ifndef ZCCHEN_CLIBS__OBJECT_H
+#define ZCCHEN_CLIBS__OBJECT_H
 
 #include <stddef.h>
 
@@ -50,4 +50,4 @@ const size_t object_get_size(struct object_t *obj);
 extern }
 #endif
 
-#endif /* ifndef CTOOLINGS_OBJECT_H */
+#endif /* ifndef ZCCHEN_CLIBS__OBJECT_H */

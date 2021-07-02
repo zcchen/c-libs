@@ -1,5 +1,9 @@
-#ifndef CTOOLINGS_ENDIAN_H
-#define CTOOLINGS_ENDIAN_H
+#ifndef ZCCHEN_CLIBS__ENDIAN_H
+#define ZCCHEN_CLIBS__ENDIAN_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // If selecting endian detection at build time,
 // it will use compiler's global definations to check the host endian.
@@ -88,5 +92,9 @@ const union endian_tester_t endian_tester = {
 
 #endif /* if defined(ENDIAN_SETUP_AT_BUILD_TIME) && (ENDIAN_SETUP_AT_BUILD_TIME != 0) */
 
+#ifdef __cplusplus
+extern }
+#endif
 
-#endif /* ifndef CTOOLINGS_ENDIAN_H */
+
+#endif /* ifndef ZCCHEN_CLIBS__ENDIAN_H */

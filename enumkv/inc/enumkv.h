@@ -1,5 +1,5 @@
-#ifndef CTOOLINGS_ENUMKY_H
-#define CTOOLINGS_ENUMKY_H
+#ifndef ZCCHEN_CLIBS__ENUMKY_H
+#define ZCCHEN_CLIBS__ENUMKY_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,4 +36,4 @@ int enumkv_list_find(const struct enumkv_elem_t *enumkv_list, size_t maxlen,
 extern }
 #endif
 
-#endif /* ifndef CTOOLINGS_ENUMKY_H */
+#endif /* ifndef ZCCHEN_CLIBS__ENUMKY_H */

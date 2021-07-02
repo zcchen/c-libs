@@ -1,5 +1,5 @@
-#ifndef CTOOLINGS_CLASS_H
-#define CTOOLINGS_CLASS_H
+#ifndef ZCCHEN_CLIBS__CLASS_H
+#define ZCCHEN_CLIBS__CLASS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,4 +88,4 @@ const size_t class_get_obj_size(struct class_t *cls);
 extern }
 #endif
 
-#endif /* ifndef CTOOLINGS_CLASS_H */
+#endif /* ifndef ZCCHEN_CLIBS__CLASS_H */
