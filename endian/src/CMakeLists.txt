@@ -1,0 +1,6 @@
+FILE(GLOB_RECURSE src_files "*.c")
+
+ADD_LIBRARY(${LIBNAME} INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(${LIBNAME} INTERFACE "${PROJECT_SOURCE_DIR}/${LIBNAME}/inc")
+
+# add source code packing support.
