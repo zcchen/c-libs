@@ -11,6 +11,17 @@
   ((((x) & 0xff000000u) >> 24) | (((x) & 0x00ff0000u) >> 8)     \
    | (((x) & 0x0000ff00u) << 8) | (((x) & 0x000000ffu) << 24))
 
+/* Swap bytes in 64-bit value.  */
+#define __bswap_constant_64(x)              \
+  ((((x) & 0xff00000000000000ull) >> 56)    \
+   | (((x) & 0x00ff000000000000ull) >> 40)  \
+   | (((x) & 0x0000ff0000000000ull) >> 24)  \
+   | (((x) & 0x000000ff00000000ull) >> 8)   \
+   | (((x) & 0x00000000ff000000ull) << 8)   \
+   | (((x) & 0x0000000000ff0000ull) << 24)  \
+   | (((x) & 0x000000000000ff00ull) << 40)  \
+   | (((x) & 0x00000000000000ffull) << 56))
+
 
 uint16_t clibs_htobe16(uint16_t host_16bits)
 {
@@ -196,3 +207,94 @@ uint32_t clibs_le32toh(uint32_t little_endian_32bits)
 #endif
 }
 
+uint64_t clibs_htobe64(uint64_t host_64bits)
+{
+#ifndef __ENDIAN_SETUP_AT_BUILD_TIME
+    if (clibs_host_endian() == 'b') {
+        return host_64bits;
+    }
+    else if (clibs_host_endian() == 'l') {
+        return __bswap_constant_64(host_64bits);
+    }
+    else {
+        return FATAL_UINT_RETURN;
+    }
+#else
+#if (clibs_host_endian() == 'b')
+    return host_64bits;
+#elif (clibs_host_endian() == 'l')
+    return __bswap_constant_64(host_64bits);
+#else
+    #error "I don't know how to convert this!"
+#endif
+#endif
+}
+
+uint64_t clibs_htole64(uint64_t host_64bits)
+{
+#ifndef __ENDIAN_SETUP_AT_BUILD_TIME
+    if (clibs_host_endian() == 'l') {
+        return host_64bits;
+    }
+    else if (clibs_host_endian() == 'b') {
+        return __bswap_constant_64(host_64bits);
+    }
+    else {
+        return FATAL_UINT_RETURN;
+    }
+#else
+#if (clibs_host_endian() == 'l')
+    return host_64bits;
+#elif (clibs_host_endian() == 'b')
+    return __bswap_constant_64(host_64bits);
+#else
+    #error "I don't know how to convert this!"
+#endif
+#endif
+}
+
+uint64_t clibs_be64toh(uint64_t big_endian_64bits)
+{
+#ifndef __ENDIAN_SETUP_AT_BUILD_TIME
+    if (clibs_host_endian() == 'b') {
+        return big_endian_64bits;
+    }
+    else if (clibs_host_endian() == 'l') {
+        return __bswap_constant_64(big_endian_64bits);
+    }
+    else {
+        return FATAL_UINT_RETURN;
+    }
+#else
+#if (clibs_host_endian() == 'b')
+    return big_endian_64bits;
+#elif (clibs_host_endian() == 'l')
+    return __bswap_constant_64(big_endian_64bits);
+#else
+    #error "I don't know how to convert this!"
+#endif
+#endif
+}
+
+uint64_t clibs_le64toh(uint64_t little_endian_64bits)
+{
+#ifndef __ENDIAN_SETUP_AT_BUILD_TIME
+    if (clibs_host_endian() == 'l') {
+        return little_endian_64bits;
+    }
+    else if (clibs_host_endian() == 'b') {
+        return __bswap_constant_64(little_endian_64bits);
+    }
+    else {
+        return FATAL_UINT_RETURN;
+    }
+#else
+#if (clibs_host_endian() == 'l')
+    return little_endian_64bits;
+#elif (clibs_host_endian() == 'b')
+    return __bswap_constant_64(little_endian_64bits);
+#else
+    #error "I don't know how to convert this!"
+#endif
+#endif
+}

@@ -30,11 +30,18 @@ uint32_t clibs_htole32(uint32_t host_32bits);
 uint32_t clibs_be32toh(uint32_t big_endian_32bits);
 uint32_t clibs_le32toh(uint32_t little_endian_32bits);
 
+uint64_t clibs_htobe64(uint64_t host_64bits);
+uint64_t clibs_htole64(uint64_t host_64bits);
+uint64_t clibs_be64toh(uint64_t big_endian_64bits);
+uint64_t clibs_le64toh(uint64_t little_endian_64bits);
+
 // network protocol is big endian
-#define clibs_htonl(hostlong) clibs_htobe32(hostlong)
 #define clibs_htons(hostshort) clibs_htobe16(hostshort)
-#define clibs_ntohl(netlong) clibs_be32toh(netlong)
+#define clibs_htonl(hostlong) clibs_htobe32(hostlong)
+#define clibs_htonll(hostlonglong) clibs_htobe64(hostlonglong)
 #define clibs_ntohs(netshort) clibs_be16toh(netshort)
+#define clibs_ntohl(netlong) clibs_be32toh(netlong)
+#define clibs_ntohll(netlonglong) clibs_be64toh(netlonglong)
 
 // clibs_host_endian() will return 'l' if platform is little-endian
 // clibs_host_endian() will return 'b' if platform is big-endian
