@@ -5,7 +5,7 @@
 
 int test__print_endian()
 {
-    printf("System Endian is: %c.\n", get_sys_endian());
+    printf("System Endian is: %c.\n", clibs_host_endian());
     return 0;
 }
 
