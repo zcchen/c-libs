@@ -72,15 +72,15 @@ struct dataframes_t {
             struct {
                 uint8_t include_head:1;     // length value includes the head frame
                 uint8_t include_length:1;   // length value includes the length frames
-                uint8_t include_data:1;     // length value includes the data frames
                 uint8_t include_checksum:1; // length value includes the checksum frames
                 uint8_t include_tail:1;     // length value includes the tail frames
             } bits;
         } rules;
-    } length;
+    } length;   // length value MUST includes the data frames
     struct {
         uint8_t *frames;
         size_t capacity;
+        size_t size;
         union {
             uint8_t byte;
             struct {
@@ -94,11 +94,10 @@ struct dataframes_t {
             struct {
                 uint8_t include_head:1;     // length value includes the head frame
                 uint8_t include_length:1;   // length value includes the length frames
-                uint8_t include_data:1;     // length value includes the data frames
             } bits;
         } rules;
-        uint16_t (* calc)(uint8_t *raw_data, size_t size);
-    } checksum;
+        uint16_t (* calc)(volatile uint8_t *raw_data, const size_t size);
+    } checksum;     // checksum value MUST includes the data frames
     struct {
         uint8_t frame;
         union {
@@ -114,6 +113,13 @@ enum dataframes_err_code {
     DATAFRAMES__VAR_TYPE_UNKNOWN,
     DATAFRAMES__INIT_LIST_FAILED,
     DATAFRAMES__OVER_LIST_CAPACITY,
+    DATAFRAMES__BUFFER_WITHOUT_VALID_MSG,
+    DATAFRAMES__MSG_WITHOUT_VALID_CHECKSUM,
+    DATAFRAMES__NOT_ENOUGH_FRAMES_CAPACITY,
+    DATAFRAMES__FRAME_STRUCT_NOT_INIT,
+    DATAFRAMES__FRAME_STRUCT_NOT_READY,
+    DATAFRAMES__FRAME_STRUCT_IS_LOCKED,
+    DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY,
 };
 
 enum dataframes_checksum_t {
@@ -156,8 +162,8 @@ int dataframes__encode_list(struct dataframes_t *frames, volatile uint8_t* buffe
                             const size_t buffer_len, size_t* encoded_len);
 int dataframes__encode_ringbuf(struct dataframes_t *frames, volatile struct ringbuf_t *ringbuf);
 
-int dataframes__set(struct dataframes_t *frames, struct dataframes_list_t* data);
-int dataframes__get(struct dataframes_t *frames, struct dataframes_list_t* data);
+int dataframes__setdata(struct dataframes_t *frames, struct dataframes_list_t* data);
+int dataframes__getdata(struct dataframes_t *frames, struct dataframes_list_t* data);
 
 
 #ifdef __cplusplus
