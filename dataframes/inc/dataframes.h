@@ -4,9 +4,49 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "ringbuf.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct dataframes_var_t {
+    enum dataframes_type_t {
+        dataframes_LIST_T = 0,
+        dataframes_STRING,
+        dataframes_UINT8_T,
+        dataframes_INT8_T,
+        dataframes_UINT16_T,
+        dataframes_INT16_T,
+        dataframes_UINT32_T,
+        dataframes_INT32_T,
+        dataframes_UINT64_T,
+        dataframes_INT64_T,
+        dataframes_FLOAT,
+        dataframes_DOUBLE,
+        dataframes_LONGDOUBLE,
+    } type;
+    union dataframes_value_t {
+        struct dataframes_list_t* list;
+        char* strptr;       // remember to free it before to call the destroy function().
+        uint8_t uint8;
+        int8_t int8;
+        uint16_t uint16;
+        int16_t int16;
+        uint32_t uint32;
+        int32_t int32;
+        uint64_t uint64;
+        int64_t int64;
+        float float16;
+        double double32;
+        long double longdouble64;
+    } value;
+};
+
+struct dataframes_list_t {
+    size_t capacity;
+    struct dataframes_var_t *list;
+};
 
 struct dataframes_t {
     union {     // the status bits for this data
@@ -39,8 +79,8 @@ struct dataframes_t {
         } rules;
     } length;
     struct {
-        uint8_t *raw;
-        size_t size;
+        uint8_t *frames;
+        size_t capacity;
         union {
             uint8_t byte;
             struct {
@@ -69,41 +109,55 @@ struct dataframes_t {
     } tail;
 };
 
-struct dataframes_var_t {
-    enum datafrases_type_t {
-        dataframes_UINT8_T = 0,
-        dataframes_INT8_T,
-        dataframes_UINT16_T,
-        dataframes_INT16_T,
-        dataframes_UINT32_T,
-        dataframes_INT32_T,
-        dataframes_UINT64_T,
-        dataframes_INT64_T,
-        dataframes_FLOAT,
-        dataframes_DOUBLE,
-    } type;
-    union dataframes_value_t {
-        uint8_t uint8;
-        int8_t int8;
-        uint16_t uint16;
-        int16_t int16;
-        uint32_t uint32;
-        int32_t int32;
-        float float16;
-        double double32;
-    } value;
+enum dataframes_err_code {
+    DATAFRAMES__OK = 0,
+    DATAFRAMES__VAR_TYPE_UNKNOWN,
+    DATAFRAMES__INIT_LIST_FAILED,
+    DATAFRAMES__OVER_LIST_CAPACITY,
 };
 
-int dataframes_init(struct dataframes_t *frame);
+enum dataframes_checksum_t {
+    DATAFRAMES_CHECKSUM_NONE = 0,
+    DATAFRAMES_CHECKSUM_SUM,
+};
 
-int dataframes_decode(struct dataframes_t *frame, uint8_t* buffer,
-                      const size_t buffer_len, size_t* decoded_len);
+// memory setup
+struct dataframes_var_t* dataframes_var__create(void);
+int dataframes_var__init(struct dataframes_var_t* frame);
+void dataframes_var__destroy(struct dataframes_var_t* frame);
 
-int dataframes_encode(struct dataframes_t *frame, uint8_t* buffer,
-                      const size_t buffer_len, size_t* encoded_len);
+// set the dataframes_var
+int dataframes_var__set(struct dataframes_var_t* frame,
+                        enum dataframes_type_t type, void* value);
 
-int dataframes_set(struct dataframes_t *frame, void* data_struct);
-int dataframes_get(struct dataframes_t *frame, void* data_struct);
+struct dataframes_list_t* dataframes_list__create(size_t capacity);
+int dataframes_list__init(struct dataframes_list_t *l, size_t capacity);
+void dataframes_list__destroy(struct dataframes_list_t *l);
+
+// get the dataframes use size
+size_t dataframes_list__getsize(struct dataframes_list_t *l);
+// set the dataframes value
+int dataframes_list__setvalue(struct dataframes_list_t *l, size_t index,
+                              enum dataframes_type_t type, void* value);
+
+struct dataframes_t* dataframes__create(const size_t capacity,
+                     const uint8_t head, const uint8_t tail,
+                     const enum dataframes_checksum_t checksum);
+int dataframes__init(struct dataframes_t *frames, const size_t capacity,
+                     const uint8_t head, const uint8_t tail,
+                     const enum dataframes_checksum_t checksum);
+void dataframes__destroy(struct dataframes_t* frames);
+
+int dataframes__decode_list(struct dataframes_t *frames, volatile uint8_t* buffer,
+                            const size_t buffer_len, size_t* decoded_len);
+int dataframes__decode_ringbuf(struct dataframes_t *frames, volatile struct ringbuf_t *ringbuf);
+
+int dataframes__encode_list(struct dataframes_t *frames, volatile uint8_t* buffer,
+                            const size_t buffer_len, size_t* encoded_len);
+int dataframes__encode_ringbuf(struct dataframes_t *frames, volatile struct ringbuf_t *ringbuf);
+
+int dataframes__set(struct dataframes_t *frames, struct dataframes_list_t* data);
+int dataframes__get(struct dataframes_t *frames, struct dataframes_list_t* data);
 
 
 #ifdef __cplusplus
