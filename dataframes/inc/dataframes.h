@@ -96,7 +96,7 @@ struct dataframes_t {
                 uint8_t include_length:1;   // length value includes the length frames
             } bits;
         } rules;
-        uint16_t (* calc)(volatile uint8_t *raw_data, const size_t size);
+        uint16_t (* calc)(uint16_t last, volatile uint8_t *raw_data, const size_t size);
     } checksum;     // checksum value MUST includes the data frames
     struct {
         uint8_t frame;
@@ -115,10 +115,10 @@ enum dataframes_err_code {
     DATAFRAMES__OVER_LIST_CAPACITY,
     DATAFRAMES__BUFFER_WITHOUT_VALID_MSG,
     DATAFRAMES__MSG_WITHOUT_VALID_CHECKSUM,
-    DATAFRAMES__NOT_ENOUGH_FRAMES_CAPACITY,
     DATAFRAMES__FRAME_STRUCT_NOT_INIT,
     DATAFRAMES__FRAME_STRUCT_NOT_READY,
     DATAFRAMES__FRAME_STRUCT_IS_LOCKED,
+    DATAFRAMES__NOT_ENOUGH_FRAMES_CAPACITY,
     DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY,
 };
 
@@ -134,17 +134,22 @@ void dataframes_var__destroy(struct dataframes_var_t* frame);
 
 // set the dataframes_var
 int dataframes_var__set(struct dataframes_var_t* frame,
-                        enum dataframes_type_t type, void* value);
+                        const enum dataframes_type_t type, const void* value);
 
 struct dataframes_list_t* dataframes_list__create(size_t capacity);
 int dataframes_list__init(struct dataframes_list_t *l, size_t capacity);
 void dataframes_list__destroy(struct dataframes_list_t *l);
 
 // get the dataframes use size
-size_t dataframes_list__getsize(struct dataframes_list_t *l);
+size_t dataframes_list__getsize(const struct dataframes_list_t *l);
 // set the dataframes value
-int dataframes_list__setvalue(struct dataframes_list_t *l, size_t index,
-                              enum dataframes_type_t type, void* value);
+int dataframes_list__setvalue(struct dataframes_list_t *l, const size_t index,
+                              const enum dataframes_type_t type, const void* value);
+
+int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
+                                    uint8_t *buffer, const size_t maxlen, size_t* conv_len);
+int dataframes_list__conv_from_buffer(const struct dataframes_list_t *l,
+                                      uint8_t *buffer, const size_t maxlen, size_t* conv_len);
 
 struct dataframes_t* dataframes__create(const size_t capacity,
                      const uint8_t head, const uint8_t tail,
@@ -162,8 +167,8 @@ int dataframes__encode_list(struct dataframes_t *frames, volatile uint8_t* buffe
                             const size_t buffer_len, size_t* encoded_len);
 int dataframes__encode_ringbuf(struct dataframes_t *frames, volatile struct ringbuf_t *ringbuf);
 
-int dataframes__setdata(struct dataframes_t *frames, struct dataframes_list_t* data);
-int dataframes__getdata(struct dataframes_t *frames, struct dataframes_list_t* data);
+int dataframes__setdata(struct dataframes_t *frames, const struct dataframes_list_t* data);
+int dataframes__getdata(struct dataframes_t *frames, const struct dataframes_list_t* data);
 
 
 #ifdef __cplusplus
