@@ -28,7 +28,7 @@ struct dataframes_var_t {
     } type;
     union dataframes_value_t {
         struct dataframes_list_t* list;
-        char* strptr;       // remember to free it before to call the destroy function().
+        char* strptr;       // Library will free it if the dataframes_var is destroyed.
         uint8_t uint8;
         int8_t int8;
         uint16_t uint16;
@@ -115,11 +115,13 @@ enum dataframes_err_code {
     DATAFRAMES__OVER_LIST_CAPACITY,
     DATAFRAMES__BUFFER_WITHOUT_VALID_MSG,
     DATAFRAMES__MSG_WITHOUT_VALID_CHECKSUM,
+    DATAFRAMES__MSG_DECODED_LENGTH_ERROR,
     DATAFRAMES__FRAME_STRUCT_NOT_INIT,
     DATAFRAMES__FRAME_STRUCT_NOT_READY,
     DATAFRAMES__FRAME_STRUCT_IS_LOCKED,
     DATAFRAMES__NOT_ENOUGH_FRAMES_CAPACITY,
     DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY,
+    DATAFRAMES__BUFFER_CHAR_OVERFLOW,
 };
 
 enum dataframes_checksum_t {
@@ -148,8 +150,8 @@ int dataframes_list__setvalue(struct dataframes_list_t *l, const size_t index,
 
 int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
                                     uint8_t *buffer, const size_t maxlen, size_t* conv_len);
-int dataframes_list__conv_from_buffer(const struct dataframes_list_t *l,
-                                      uint8_t *buffer, const size_t maxlen, size_t* conv_len);
+int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
+                            const uint8_t *buffer, const size_t maxlen, size_t *decoded_len);
 
 struct dataframes_t* dataframes__create(const size_t capacity,
                      const uint8_t head, const uint8_t tail,
@@ -168,7 +170,7 @@ int dataframes__encode_list(struct dataframes_t *frames, volatile uint8_t* buffe
 int dataframes__encode_ringbuf(struct dataframes_t *frames, volatile struct ringbuf_t *ringbuf);
 
 int dataframes__setdata(struct dataframes_t *frames, const struct dataframes_list_t* data);
-int dataframes__getdata(struct dataframes_t *frames, const struct dataframes_list_t* data);
+int dataframes__getdata(const struct dataframes_t *frames, struct dataframes_list_t* data);
 
 
 #ifdef __cplusplus

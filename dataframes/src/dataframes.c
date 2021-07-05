@@ -40,6 +40,12 @@ void dataframes_var__destroy(struct dataframes_var_t* frame)
             dataframes_list__destroy(l);    // destroy the list child.
         }
     }
+    else if (frame->type == dataframes_STRING) {
+        char* s = frame->value.strptr;
+        if (s) {
+            free(s);
+        }
+    }
     free(frame);
 }
 
@@ -47,12 +53,19 @@ int dataframes_var__set(struct dataframes_var_t* frame,
                         const enum dataframes_type_t type, const void* value)
 {
     frame->type = type;
+    size_t string_size = 0;
     switch (type) {
         case dataframes_LIST_T:
             frame->value.list = (struct dataframes_list_t*)value;
             break;
         case dataframes_STRING:
-            frame->value.strptr = (char*)value;
+            string_size = strlen((char*)value);
+            frame->value.strptr = malloc(string_size + 1);
+            if (!strncpy(frame->value.strptr, value, string_size)) {
+                // no chars copy to frame->value.strptr,
+                free(frame->value.strptr);
+                frame->value.strptr = NULL;
+            }
             break;
         case dataframes_UINT8_T:
             frame->value.uint8 = *(uint8_t*)(value);
@@ -98,6 +111,7 @@ int dataframes_var__set(struct dataframes_var_t* frame,
 struct dataframes_list_t* dataframes_list__create(size_t capacity)
 {
     struct dataframes_list_t* ret = malloc(sizeof(struct dataframes_list_t));
+    ret->capacity = 0;
     if (dataframes_list__init(ret, capacity)) {
         free(ret);
         return NULL;
@@ -107,15 +121,18 @@ struct dataframes_list_t* dataframes_list__create(size_t capacity)
 
 int dataframes_list__init(struct dataframes_list_t *l, size_t capacity)
 {
-    struct dataframes_var_t* var_list = malloc(sizeof(struct dataframes_var_t) * capacity);
+    if (!l->capacity) {
+        struct dataframes_var_t* var_list = malloc(sizeof(struct dataframes_var_t) * capacity);
+        l->capacity = capacity;
+        l->list = var_list;
+    }
     for (int i = 0; i < capacity; ++i) {
-        if (dataframes_var__init(&var_list[i])) {
-            free(var_list);
+        if (dataframes_var__init(&l->list[i])) {
+            free(l->list);
+            l->capacity = 0;
             return DATAFRAMES__INIT_LIST_FAILED;
         };
     }
-    l->capacity = capacity;
-    l->list = var_list;
     return DATAFRAMES__OK;
 }
 
@@ -156,7 +173,7 @@ struct dataframes_t* dataframes__create(const size_t capacity,
 {
     struct dataframes_t* ret = malloc(sizeof(struct dataframes_t));
     if (dataframes__init(ret, capacity, head, tail, checksum)) {
-        free(ret);
+        dataframes__destroy(ret);
         return NULL;
     }
     return ret;
@@ -425,9 +442,26 @@ int dataframes__setdata(struct dataframes_t *frames, const struct dataframes_lis
     return DATAFRAMES__OK;
 }
 
-int dataframes__getdata(struct dataframes_t *frames, const struct dataframes_list_t* data)
-{   // TODO
-    return 0;
+int dataframes__getdata(const struct dataframes_t *frames, struct dataframes_list_t* data)
+{
+    // 1. check the struct dataframes_t status
+    if (!frames->status.bits.ready) {
+        return DATAFRAMES__FRAME_STRUCT_NOT_READY;
+    }
+    if (frames->status.bits.lock) {
+        return DATAFRAMES__FRAME_STRUCT_IS_LOCKED;
+    }
+    // 2. get data from data->frames, since it is allocate and checked.
+    size_t tmp_decoded_len = 0;
+    int ret = dataframes_list__conv_from_buffer(data, frames->data.frames,
+                                      frames->data.capacity, &tmp_decoded_len);
+    if (ret) {
+        return ret;
+    }
+    if (tmp_decoded_len != frames->data.size) {
+        return DATAFRAMES__MSG_DECODED_LENGTH_ERROR;
+    }
+    return DATAFRAMES__OK;
 }
 
 int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
@@ -450,11 +484,11 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
                 break;
             case dataframes_STRING:
                 try_to_conv_len = strlen(var->value.strptr);
-                if (try_to_conv_len > maxlen - conv_size) {
+                if (try_to_conv_len + 1 > maxlen - conv_size) {
                     return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
                 }
                 strncpy((char*)(buffer + conv_size), var->value.strptr, try_to_conv_len);
-                conv_size += try_to_conv_len;
+                conv_size += try_to_conv_len + 1;   // including '\0' char
             case dataframes_UINT8_T:
                 if (sizeof(uint8_t) > maxlen - conv_size) {
                     return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
@@ -529,9 +563,101 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
     return DATAFRAMES__OK;
 }
 
-int dataframes_list__conv_from_buffer(const struct dataframes_list_t *l,
-                                      uint8_t *buffer, const size_t maxlen, size_t* conv_len)
+int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
+                            const uint8_t *buffer, const size_t maxlen, size_t *decoded_len)
 {
-    // TODO
+    *decoded_len = 0;
+    size_t pri_decoded_len = 0;
+    for (int i = 0; i < dataframes_list__getsize(l); ++i) {
+        struct dataframes_var_t *var = l->list + sizeof(struct dataframes_var_t) * i;
+        size_t try_decoding_len = 0;
+        int tmp_ret = 0;
+        switch (var->type) {
+            case dataframes_LIST_T:
+                tmp_ret = dataframes_list__conv_from_buffer(var->value.list,
+                        buffer + pri_decoded_len, maxlen - pri_decoded_len, &try_decoding_len);
+                if (tmp_ret) {
+                    return tmp_ret;
+                }
+                pri_decoded_len += try_decoding_len;
+                break;
+            case dataframes_STRING:
+                try_decoding_len = strlen((char*)(buffer + pri_decoded_len));
+                if (try_decoding_len + 1 > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__BUFFER_CHAR_OVERFLOW; // buffer char* overflow
+                }
+                strncpy(var->value.strptr, (char*)(buffer+pri_decoded_len), try_decoding_len);
+                pri_decoded_len += try_decoding_len + 1;    // including the '\0' char.
+            case dataframes_UINT8_T:
+                if (sizeof(uint8_t) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.uint8 = *(uint8_t*)(buffer + pri_decoded_len);
+                pri_decoded_len += sizeof(uint8_t);
+            case dataframes_INT8_T:
+                if (sizeof(int8_t) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.uint8 = *(int8_t*)(buffer + pri_decoded_len);
+                pri_decoded_len += sizeof(int8_t);
+            case dataframes_UINT16_T:
+                if (sizeof(uint16_t) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.uint16 = clibs_htons(*(uint16_t*)(buffer + pri_decoded_len));
+                pri_decoded_len += sizeof(uint16_t);
+            case dataframes_INT16_T:
+                if (sizeof(int16_t) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.int16 = clibs_htons(*(int16_t*)(buffer + pri_decoded_len));
+                pri_decoded_len += sizeof(int16_t);
+            case dataframes_UINT32_T:
+                if (sizeof(uint32_t) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.uint32 = clibs_htonl(*(uint32_t*)(buffer + pri_decoded_len));
+                pri_decoded_len += sizeof(uint32_t);
+            case dataframes_INT32_T:
+                if (sizeof(int32_t) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.int32 = clibs_htonl(*(int32_t*)(buffer + pri_decoded_len));
+                pri_decoded_len += sizeof(int32_t);
+            case dataframes_UINT64_T:
+                if (sizeof(uint64_t) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.uint64 = clibs_htonll(*(uint64_t*)(buffer + pri_decoded_len));
+                pri_decoded_len += sizeof(uint64_t);
+            case dataframes_INT64_T:
+                if (sizeof(int64_t) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.int64 = clibs_htonll(*(int64_t*)(buffer + pri_decoded_len));
+                pri_decoded_len += sizeof(int64_t);
+            case dataframes_FLOAT:
+                if (sizeof(float) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.float16 = clibs_htons(*(float*)(buffer + pri_decoded_len));
+                pri_decoded_len += sizeof(float);
+            case dataframes_DOUBLE:
+                if (sizeof(double) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.double32 = clibs_htonl(*(double*)(buffer + pri_decoded_len));
+                pri_decoded_len += sizeof(double);
+            case dataframes_LONGDOUBLE:
+                if (sizeof(long double) > maxlen - pri_decoded_len) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                var->value.longdouble64 = clibs_htonll(*(long double*)(buffer + pri_decoded_len));
+                pri_decoded_len += sizeof(long double);
+            default:
+                return DATAFRAMES__VAR_TYPE_UNKNOWN;
+        }
+    }
+    *decoded_len = pri_decoded_len;
     return DATAFRAMES__OK;
 }
