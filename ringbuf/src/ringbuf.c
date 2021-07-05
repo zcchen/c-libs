@@ -4,7 +4,7 @@ int ringbuf_init(volatile struct ringbuf_t *ringbuf)
 {
     ringbuf->head = 0;
     ringbuf->tail = 0;
-    ringbuf->error.all = 0;
+    ringbuf->error.byte = 0;
     for (int i = 0; i < sizeof(ringbuf->buf); ++i) {
         ringbuf->buf[i] = '\0';
     }
@@ -40,7 +40,7 @@ int ringbuf_push(volatile struct ringbuf_t *ringbuf,
         ringbuf->tail ++;
         i++;
         if (ringbuf->tail == ringbuf->head) {
-            ringbuf->error.bit.overflow = 1;
+            ringbuf->error.bits.overflow = 1;
         }
         if (ringbuf->tail >= sizeof(ringbuf->buf)) {
             ringbuf->tail = 0;

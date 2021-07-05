@@ -38,8 +38,8 @@ struct serialhex_var_t {
 };
 
 struct serialhex_list_t {
-    size_t len;
-    struct serialhex_var_t ls[];
+    size_t size;
+    struct serialhex_var_t l[];
 };
 
 int _shadow_serialhex_2_struct(const uint8_t *data, const size_t data_len,

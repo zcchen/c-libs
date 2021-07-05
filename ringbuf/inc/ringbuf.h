@@ -18,11 +18,11 @@ struct ringbuf_t {
     uint8_t head;
     uint8_t tail;
     union {
-        uint8_t all;
+        uint8_t byte;
         struct rx_err_t {
             uint8_t overflow:1;
-            uint8_t rsvd:7;
-        } bit;
+            uint8_t reserved:7;
+        } bits;
     } error;
 };
 
