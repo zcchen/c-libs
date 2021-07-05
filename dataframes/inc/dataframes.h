@@ -78,7 +78,7 @@ struct dataframes_t {
         } rules;
     } length;   // length value MUST includes the data frames
     struct {
-        uint8_t *frames;
+        uint8_t frames[255];
         size_t capacity;
         size_t size;
         union {
@@ -112,6 +112,7 @@ enum dataframes_err_code {
     DATAFRAMES__OK = 0,
     DATAFRAMES__VAR_TYPE_UNKNOWN,
     DATAFRAMES__INIT_LIST_FAILED,
+    DATAFRAMES__DATAFRAME_LIST_IS_NULL,
     DATAFRAMES__OVER_LIST_CAPACITY,
     DATAFRAMES__BUFFER_WITHOUT_VALID_MSG,
     DATAFRAMES__MSG_WITHOUT_VALID_CHECKSUM,
@@ -153,10 +154,9 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
 int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
                             const uint8_t *buffer, const size_t maxlen, size_t *decoded_len);
 
-struct dataframes_t* dataframes__create(const size_t capacity,
-                     const uint8_t head, const uint8_t tail,
-                     const enum dataframes_checksum_t checksum);
-int dataframes__init(struct dataframes_t *frames, const size_t capacity,
+struct dataframes_t* dataframes__create(const uint8_t head, const uint8_t tail,
+                                        const enum dataframes_checksum_t checksum);
+int dataframes__init(struct dataframes_t *frames,
                      const uint8_t head, const uint8_t tail,
                      const enum dataframes_checksum_t checksum);
 void dataframes__destroy(struct dataframes_t* frames);
