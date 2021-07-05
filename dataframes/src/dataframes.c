@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <stdio.h>
+
 // private checksum funcions
 static uint16_t _checksum_sum(uint16_t last, volatile uint8_t *raw_data, const size_t size)
 {
@@ -67,7 +69,7 @@ int dataframes_var__set(struct dataframes_var_t* frame,
         case dataframes_STRING:
             string_size = strlen((char*)value);
             frame->value.strptr = malloc(string_size + 1);
-            if (!strncpy(frame->value.strptr, value, string_size)) {
+            if (!strncpy(frame->value.strptr, value, string_size + 1)) {
                 // no chars copy to frame->value.strptr,
                 free(frame->value.strptr);
                 frame->value.strptr = NULL;
@@ -159,6 +161,9 @@ void dataframes_list__destroy(struct dataframes_list_t *l)
 
 size_t dataframes_list__getsize(const struct dataframes_list_t *l)
 {
+    if (!l) {       // for the just NULL
+        return 0;
+    }
     for (int i = 0; i < l->capacity; ++i) {
         if (l->list[i].type == dataframes_LIST_T && l->list[i].value.list == NULL) {
             return i;
@@ -310,8 +315,11 @@ int dataframes__decode_list(struct dataframes_t *frames, volatile uint8_t* buffe
     }
     frames->data.size = 0;
     for (int i = 0; i < (data_index_end - data_index_start + 1); ++i) {
-        *(frames->data.frames + i) = *(buffer + data_index_start + i);
+        frames->data.frames[i] = *(buffer + data_index_start + i);
         frames->data.size ++;
+    }
+    for (int i = frames->data.size; i < frames->data.capacity; ++i) {
+        frames->data.frames[i] = '\0';
     }
     // Assume the msg is correct, check the checksum.
     volatile uint8_t *checksum_buf = buffer + tail_index - \
@@ -321,14 +329,15 @@ int dataframes__decode_list(struct dataframes_t *frames, volatile uint8_t* buffe
     if (frames->checksum.calc) {
         if (frames->checksum.rules.bits.include_head) {
             checksum_calc = frames->checksum.calc(checksum_calc,
-                    buffer + head_index, sizeof(frames->head.frame));
+                    buffer + head_index,
+                    sizeof(frames->head.frame));
         }
         if (frames->checksum.rules.bits.include_length) {
             checksum_calc = frames->checksum.calc(checksum_calc,
                     buffer + head_index + sizeof(frames->head.frame),
                     sizeof(frames->length.value));
         }
-        frames->checksum.calc(checksum_calc,
+        checksum_calc = frames->checksum.calc(checksum_calc,
             buffer + head_index + sizeof(frames->head.frame) + sizeof(frames->length.value),
             frames->data.size);
         if (frames->checksum.value != checksum_calc) { // checksum failed, drop all
@@ -479,7 +488,6 @@ int dataframes__getdata(const struct dataframes_t *frames, struct dataframes_lis
     }
     // 2. get data from data->frames, since it is allocate and checked.
     size_t tmp_decoded_len = 0;
-    dataframes_list__init(data, data->capacity);
     int ret = dataframes_list__conv_from_buffer(data, frames->data.frames,
                                       frames->data.capacity, &tmp_decoded_len);
     if (ret) {
@@ -497,7 +505,7 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
     *conv_len = 0;
     size_t conv_size = 0;
     for (int i = 0; i < dataframes_list__getsize(l); ++i) {
-        struct dataframes_var_t *var = l->list + sizeof(struct dataframes_var_t) * i;
+        struct dataframes_var_t *var = &l->list[i];
         size_t try_to_conv_len = 0;
         int tmp_ret = 0;
         switch (var->type) {
@@ -510,12 +518,14 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
                 conv_size += try_to_conv_len;
                 break;
             case dataframes_STRING:
-                try_to_conv_len = strlen(var->value.strptr);
-                if (try_to_conv_len + 1 > maxlen - conv_size) {
-                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                if (var->value.strptr) {
+                    try_to_conv_len = strlen(var->value.strptr);
+                    if (try_to_conv_len + 1 > maxlen - conv_size) {
+                        return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                    }
+                    strncpy((char*)(buffer + conv_size), var->value.strptr, try_to_conv_len);
+                    conv_size += try_to_conv_len + 1;   // including '\0' char
                 }
-                strncpy((char*)(buffer + conv_size), var->value.strptr, try_to_conv_len);
-                conv_size += try_to_conv_len + 1;   // including '\0' char
                 break;
             case dataframes_UINT8_T:
                 if (sizeof(uint8_t) > maxlen - conv_size) {
@@ -608,7 +618,7 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
     *decoded_len = 0;
     size_t pri_decoded_len = 0;
     for (int i = 0; i < dataframes_list__getsize(l); ++i) {
-        struct dataframes_var_t *var = l->list + sizeof(struct dataframes_var_t) * i;
+        struct dataframes_var_t *var = &l->list[i];
         size_t try_decoding_len = 0;
         int tmp_ret = 0;
         switch (var->type) {
@@ -625,6 +635,10 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
                 if (try_decoding_len + 1 > maxlen - pri_decoded_len) {
                     return DATAFRAMES__BUFFER_CHAR_OVERFLOW; // buffer char* overflow
                 }
+                if (var->value.strptr) {
+                    free(var->value.strptr);
+                }
+                var->value.strptr = malloc(try_decoding_len + 1);
                 strncpy(var->value.strptr, (char*)(buffer+pri_decoded_len), try_decoding_len);
                 pri_decoded_len += try_decoding_len + 1;    // including the '\0' char.
                 break;

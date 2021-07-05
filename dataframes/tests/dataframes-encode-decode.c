@@ -25,7 +25,8 @@ void printf_dataframes(struct dataframes_t *data)
     printf("tail: [0x%X]\n", data->tail.frame);
 }
 
-int test_dataframes__init_encode_decode(struct dataframes_list_t *data)
+int test_dataframes__init_encode_decode(struct dataframes_list_t *data,
+                                        struct dataframes_list_t *recv)
 {
     printf("--- try to encode data: %p ---\n", data);
     printf(">>> init the buffer ...\n");
@@ -44,8 +45,9 @@ int test_dataframes__init_encode_decode(struct dataframes_list_t *data)
     assert(0 == dataframes__init(&recv_dataframes, 0xAB, 0x66, DATAFRAMES_CHECKSUM_SUM));
     assert(0 == dataframes__init(&send_dataframes, 0xAB, 0x66, DATAFRAMES_CHECKSUM_SUM));
 
-    printf(">>> Set the <data> to send_dataframes ...\n");
-    printf("ret: %d\n", dataframes__setdata(&send_dataframes, data));
+    printf(">>> Set the <data:%p> to send_dataframes ...\n", data);
+    printf(">>> data list size: %ld\n", dataframes_list__getsize(data));
+    printf("ret for setdata: %d\n", dataframes__setdata(&send_dataframes, data));
     assert(0 == dataframes__setdata(&send_dataframes, data));
     printf_dataframes(&send_dataframes);
     printf(">>> Encode the send_dataframes to send buffer ...\n");
@@ -57,7 +59,7 @@ int test_dataframes__init_encode_decode(struct dataframes_list_t *data)
     printf(">>> Decode the sent buffer to recv_dataframes ...\n");
     printf("ret: %d\n",
            dataframes__decode_list(&recv_dataframes, buffer, buffer_size, &decoded_size));
-    /*assert(0 == dataframes__decode_list(&recv_dataframes, buffer, buffer_size, &decoded_size));*/
+    assert(0 == dataframes__decode_list(&recv_dataframes, buffer, buffer_size, &decoded_size));
     printf_dataframes(&recv_dataframes);
     printf(">>> Decoded size: %ld\n", decoded_size);
 
@@ -65,22 +67,19 @@ int test_dataframes__init_encode_decode(struct dataframes_list_t *data)
     assert(decoded_size != 0);
     assert(decoded_size == encoded_size);
 
-    printf(">>> Init the data list to get the decoded result ...\n");
-    struct dataframes_list_t recv_datalist = {.capacity = 0};
-    dataframes_list__init(&recv_datalist, 8);
-
     printf(">>> Checking the recv datalist ...\n");
-    assert(0 == dataframes__getdata(&recv_dataframes, &recv_datalist));
+    printf(">>> recv list size: %ld\n", dataframes_list__getsize(recv));
+    printf("ret for getdata: %d\n", dataframes__getdata(&recv_dataframes, recv));
+    assert(0 == dataframes__getdata(&recv_dataframes, recv));
 
     printf(">>> Checking the used size of recv datalist ...\n");
     if (!data) {    // NULL input
-        assert(0 == dataframes_list__getsize(&recv_datalist));
+        assert(0 == dataframes_list__getsize(recv));
     }
     else {
-        assert(dataframes_list__getsize(data) == dataframes_list__getsize(&recv_datalist));
+        assert(dataframes_list__getsize(data) == dataframes_list__getsize(recv));
     }
 
-    dataframes_list__init(&recv_datalist, 0);
     printf(">>> all assert test passed <<<\n");
     printf("------------------------------\n");
     return 0;
@@ -88,10 +87,17 @@ int test_dataframes__init_encode_decode(struct dataframes_list_t *data)
 
 int main(void)
 {
-    TEST_RETURN(test_dataframes__init_encode_decode(NULL));
+    struct dataframes_list_t recv_null = {.capacity = 0};
+    dataframes_list__init(&recv_null, 16);
+
+    TEST_RETURN(test_dataframes__init_encode_decode(NULL, &recv_null));
+    TEST_RETURN(test_dataframes__init_encode_decode(NULL, &recv_null));
 
     struct dataframes_list_t datalist4set = {.capacity = 0};
     dataframes_list__init(&datalist4set, 16);
+    struct dataframes_list_t datalist4recv = {.capacity = 0};
+    dataframes_list__init(&datalist4recv, 16);
+
     uint8_t a = 0x11;
     int8_t b = -0x11;
     uint16_t c = 0x2233;
@@ -116,7 +122,25 @@ int main(void)
     dataframes_list__setvalue(&datalist4set, 9, dataframes_DOUBLE, &j);
     dataframes_list__setvalue(&datalist4set, 10, dataframes_LONGDOUBLE, &k);
     dataframes_list__setvalue(&datalist4set, 11, dataframes_STRING, str);
-    TEST_RETURN(test_dataframes__init_encode_decode(&datalist4set));
 
+    int zero = 0;
+    dataframes_list__setvalue(&datalist4recv, 0, dataframes_UINT8_T, &zero);
+    dataframes_list__setvalue(&datalist4recv, 1, dataframes_INT8_T, &zero);
+    dataframes_list__setvalue(&datalist4recv, 2, dataframes_UINT16_T, &zero);
+    dataframes_list__setvalue(&datalist4recv, 3, dataframes_INT16_T, &zero);
+    dataframes_list__setvalue(&datalist4recv, 4, dataframes_UINT32_T, &zero);
+    dataframes_list__setvalue(&datalist4recv, 5, dataframes_INT32_T, &zero);
+    dataframes_list__setvalue(&datalist4recv, 6, dataframes_UINT64_T, &zero);
+    dataframes_list__setvalue(&datalist4recv, 7, dataframes_INT64_T, &zero);
+    dataframes_list__setvalue(&datalist4recv, 8, dataframes_FLOAT, &zero);
+    dataframes_list__setvalue(&datalist4recv, 9, dataframes_DOUBLE, &zero);
+    dataframes_list__setvalue(&datalist4recv, 10, dataframes_LONGDOUBLE, &zero);
+    dataframes_list__setvalue(&datalist4recv, 11, dataframes_STRING, "");
+
+    TEST_RETURN(test_dataframes__init_encode_decode(&datalist4set, &datalist4recv));
+
+    dataframes_list__init(&recv_null, 0);
+    dataframes_list__init(&datalist4set, 0);
+    dataframes_list__init(&datalist4recv, 0);
     return 0;
 }
