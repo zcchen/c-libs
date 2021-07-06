@@ -159,6 +159,28 @@ void dataframes_list__destroy(struct dataframes_list_t *l)
     free(l);
 }
 
+size_t dataframes_list__get_var_num(const struct dataframes_list_t *l)
+{
+    size_t ret = 0;
+    if (!l) {       // for the just NULL
+        return 0;
+    }
+    for (int i = 0; i < l->capacity; ++i) {
+        if (l->list[i].type == dataframes_LIST_T) {
+            if (l->list[i].value.list) {
+                ret += dataframes_list__get_var_num(l->list[i].value.list);
+            }
+            else {
+                break;
+            }
+        }
+        else {
+            ret ++;
+        }
+    }
+    return ret;
+}
+
 size_t dataframes_list__getsize(const struct dataframes_list_t *l)
 {
     if (!l) {       // for the just NULL

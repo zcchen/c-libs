@@ -144,6 +144,8 @@ int dataframes_list__init(struct dataframes_list_t *l, size_t capacity);
 void dataframes_list__destroy(struct dataframes_list_t *l);
 
 // get the dataframes use size
+size_t dataframes_list__get_var_num(const struct dataframes_list_t *l);
+// get the dataframes use size
 size_t dataframes_list__getsize(const struct dataframes_list_t *l);
 // set the dataframes value
 int dataframes_list__setvalue(struct dataframes_list_t *l, const size_t index,
