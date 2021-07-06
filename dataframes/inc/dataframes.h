@@ -4,16 +4,22 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "ringbuf.h"
+//#include "ringbuf.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+struct rawbuf_t {
+    size_t len;
+    uint8_t* buf;
+};
+
 struct dataframes_var_t {
     enum dataframes_type_t {
         dataframes_LIST_T = 0,
         dataframes_STRING,
+        dataframes_RAWBUF,
         dataframes_UINT8_T,
         dataframes_INT8_T,
         dataframes_UINT16_T,
@@ -29,6 +35,7 @@ struct dataframes_var_t {
     union dataframes_value_t {
         struct dataframes_list_t* list; // lib will deep-copy the list and point to here
         char* strptr;   // Library will free it when this data struct is destroyed.
+        struct rawbuf_t rawbuf;
         uint8_t uint8;
         int8_t int8;
         uint16_t uint16;
@@ -173,11 +180,11 @@ void dataframes__destroy(struct dataframes_t* frames);
 
 int dataframes__decode_list(struct dataframes_t *frames, volatile uint8_t* buffer,
                             const size_t buffer_len, size_t* decoded_len);
-int dataframes__decode_ringbuf(struct dataframes_t *frames, volatile struct ringbuf_t *ringbuf);
+//int dataframes__decode_ringbuf(struct dataframes_t *frames, volatile struct ringbuf_t *ringbuf);
 
 int dataframes__encode_list(struct dataframes_t *frames, volatile uint8_t* buffer,
                             const size_t buffer_len, size_t* encoded_len);
-int dataframes__encode_ringbuf(struct dataframes_t *frames, volatile struct ringbuf_t *ringbuf);
+//int dataframes__encode_ringbuf(struct dataframes_t *frames, volatile struct ringbuf_t *ringbuf);
 
 int dataframes__setdata(struct dataframes_t *frames, const struct dataframes_list_t* data);
 int dataframes__getdata(const struct dataframes_t *frames, struct dataframes_list_t* data);

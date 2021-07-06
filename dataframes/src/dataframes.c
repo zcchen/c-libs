@@ -49,6 +49,14 @@ void __dataframes_var__destroy(struct dataframes_var_t* frame)
             free(s);
         }
     }
+    else if (frame->type == dataframes_RAWBUF) {
+        uint8_t* buf = frame->value.rawbuf.buf;
+        if (buf) {
+            free(buf);
+            buf = NULL;
+        }
+        frame->value.rawbuf.len = 0;
+    }
 }
 
 void dataframes_var__destroy(struct dataframes_var_t* frame)
@@ -73,6 +81,17 @@ int dataframes_var__set(struct dataframes_var_t* frame,
                 // no chars copy to frame->value.strptr,
                 free(frame->value.strptr);
                 frame->value.strptr = NULL;
+            }
+            break;
+        case dataframes_RAWBUF:
+            malloc_size = ((struct rawbuf_t*)value)->len;
+            frame->value.rawbuf.buf = malloc(malloc_size);
+            frame->value.rawbuf.len = malloc_size;
+            if (!strncpy((char*)(frame->value.rawbuf.buf),
+                         (char*)(((struct rawbuf_t*)value)->buf), malloc_size)) {
+                free(frame->value.rawbuf.buf);
+                frame->value.rawbuf.buf = NULL;
+                frame->value.rawbuf.len = 0;
             }
             break;
         case dataframes_UINT8_T:
@@ -179,6 +198,18 @@ int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_lis
                 // no chars copy to frame->value.strptr,
                 free((*dest)->list[i].value.strptr);
                 (*dest)->list[i].value.strptr = NULL;
+            }
+        }
+        else if (src->list[i].type == dataframes_STRING) {
+            size_t malloc_size = src->list[i].value.rawbuf.len;
+            (*dest)->list[i].value.rawbuf.buf = malloc(malloc_size);
+            (*dest)->list[i].value.rawbuf.len = malloc_size;
+            if (!strncpy((char*)((*dest)->list[i].value.rawbuf.buf),
+                         (char*)(src->list[i].value.rawbuf.buf),
+                         malloc_size)) {
+                free((*dest)->list[i].value.rawbuf.buf);
+                (*dest)->list[i].value.rawbuf.buf = NULL;
+                (*dest)->list[i].value.rawbuf.len = 0;
             }
         }
         else {
@@ -578,6 +609,15 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
                     conv_size += try_to_conv_len + 1;   // including '\0' char
                 }
                 break;
+            case dataframes_RAWBUF:
+                if (var->value.rawbuf.len > maxlen - conv_size) {
+                    return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
+                }
+                for (int i = 0; i < var->value.rawbuf.len; ++i) {
+                    *(uint8_t*)(buffer + conv_size + i) = var->value.rawbuf.buf[i];
+                }
+                conv_size += var->value.rawbuf.len;
+                break;
             case dataframes_UINT8_T:
                 if (sizeof(uint8_t) > maxlen - conv_size) {
                     return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
@@ -692,6 +732,16 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
                 var->value.strptr = malloc(try_decoding_len + 1);
                 strncpy(var->value.strptr, (char*)(buffer+pri_decoded_len), try_decoding_len);
                 pri_decoded_len += try_decoding_len + 1;    // including the '\0' char.
+                break;
+            case dataframes_RAWBUF:
+                if (var->value.rawbuf.len == 0) {  // take the rest of all.
+                    var->value.rawbuf.len = maxlen - pri_decoded_len;
+                }
+                var->value.rawbuf.buf = malloc(var->value.rawbuf.len);
+                for (int i = 0; i < var->value.rawbuf.len; ++i) {
+                    var->value.rawbuf.buf[i]  = *(buffer + pri_decoded_len + i);
+                }
+                pri_decoded_len += var->value.rawbuf.len;
                 break;
             case dataframes_UINT8_T:
                 if (sizeof(uint8_t) > maxlen - pri_decoded_len) {
