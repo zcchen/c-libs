@@ -61,15 +61,15 @@ int dataframes_var__set(struct dataframes_var_t* frame,
                         const enum dataframes_type_t type, const void* value)
 {
     frame->type = type;
-    size_t string_size = 0;
+    size_t malloc_size = 0;
     switch (type) {
         case dataframes_LIST_T:
-            frame->value.list = (struct dataframes_list_t*)value;
+            dataframes_list__copy(&frame->value.list, (struct dataframes_list_t*)value);
             break;
         case dataframes_STRING:
-            string_size = strlen((char*)value);
-            frame->value.strptr = malloc(string_size + 1);
-            if (!strncpy(frame->value.strptr, value, string_size + 1)) {
+            malloc_size = strlen((char*)value);
+            frame->value.strptr = malloc(malloc_size + 1);
+            if (!strncpy(frame->value.strptr, value, malloc_size + 1)) {
                 // no chars copy to frame->value.strptr,
                 free(frame->value.strptr);
                 frame->value.strptr = NULL;
@@ -157,6 +157,35 @@ void dataframes_list__destroy(struct dataframes_list_t *l)
 {
     dataframes_list__init(l, 0);
     free(l);
+}
+
+int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_list_t* src) {
+    *dest = dataframes_list__create(src->capacity);
+    for (int i = 0; i < dataframes_list__getsize(src); ++i) {
+        (*dest)->list[i].type = src->list[i].type;
+        if (src->list[i].type == dataframes_LIST_T) {
+            int ret = dataframes_list__copy(&(*dest)->list[i].value.list,
+                                            src->list[i].value.list);
+            if (ret) {
+                (*dest)->list[i].value.list = NULL;
+                return ret;
+            }
+        }
+        else if (src->list[i].type == dataframes_STRING) {
+            size_t string_size = strlen((char*)src->list[i].value.strptr);
+            (*dest)->list[i].value.strptr = malloc(string_size + 1);
+            if (!strncpy((*dest)->list[i].value.strptr, src->list[i].value.strptr,
+                         string_size + 1)) {
+                // no chars copy to frame->value.strptr,
+                free((*dest)->list[i].value.strptr);
+                (*dest)->list[i].value.strptr = NULL;
+            }
+        }
+        else {
+            (*dest)->list[i].value = src->list[i].value;
+        }
+    }
+    return DATAFRAMES__OK;
 }
 
 size_t dataframes_list__get_var_num(const struct dataframes_list_t *l)

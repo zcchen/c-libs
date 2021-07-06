@@ -77,8 +77,8 @@ int test_dataframes__init_encode_decode(struct dataframes_list_t *data,
         assert(0 == dataframes_list__getsize(recv));
     }
     else {
-        printf("get_var_num <data>: %d\n", dataframes_list__get_var_num(data));
-        printf("get_var_num <recv>: %d\n", dataframes_list__get_var_num(recv));
+        printf("get_var_num <data>: %ld\n", dataframes_list__get_var_num(data));
+        printf("get_var_num <recv>: %ld\n", dataframes_list__get_var_num(recv));
         assert(dataframes_list__get_var_num(data) == dataframes_list__get_var_num(recv));
     }
 
@@ -151,7 +151,6 @@ int main(void)
     dataframes_list__init(&recv_null, 0);
     dataframes_list__init(&datalist4set, 0);
     dataframes_list__init(&datalist4recv, 0);
-    dataframes_list__init(&datalist4recv1, 1);
     dataframes_list__init(&datalist4recv1, 0);
     return 0;
 }

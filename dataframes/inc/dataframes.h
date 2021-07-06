@@ -27,8 +27,8 @@ struct dataframes_var_t {
         dataframes_LONGDOUBLE,
     } type;
     union dataframes_value_t {
-        struct dataframes_list_t* list;
-        char* strptr;       // Library will free it if the dataframes_var is destroyed.
+        struct dataframes_list_t* list; // lib will deep-copy the list and point to here
+        char* strptr;   // Library will free it when this data struct is destroyed.
         uint8_t uint8;
         int8_t int8;
         uint16_t uint16;
@@ -43,6 +43,13 @@ struct dataframes_var_t {
     } value;
 };
 
+// It will use malloc() to allocate the list value.
+// If you use this data in stack, please do it with the following snips:
+//      struct dataframes_list_t example = {.capacity = 0};
+//      dataframes_list__init(&example, 123);
+//      // ... your codes ...
+//      dataframes_list__init(&example, 0);
+// Remember to set the capacity at declaration, and re-initialize to 0 when everything is done.
 struct dataframes_list_t {
     size_t capacity;
     struct dataframes_var_t *list;
@@ -142,6 +149,7 @@ int dataframes_var__set(struct dataframes_var_t* frame,
 struct dataframes_list_t* dataframes_list__create(size_t capacity);
 int dataframes_list__init(struct dataframes_list_t *l, size_t capacity);
 void dataframes_list__destroy(struct dataframes_list_t *l);
+int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_list_t* src);
 
 // get the dataframes use size
 size_t dataframes_list__get_var_num(const struct dataframes_list_t *l);
