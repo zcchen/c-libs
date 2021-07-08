@@ -4,12 +4,13 @@
 #include <stdio.h>
 #include <assert.h>
 
-bool tmp_cond(const void* obj, const size_t size)
+bool tmp_cond(const struct chain_t* chain, const void* cmp, const size_t cmp_s)
 {
-    if (size != sizeof(int)) {
+    if (cmp_s != sizeof(int)) {
         return false;
     }
-    return (0 == *(int*)(obj));
+    int cmp_val = *(int*)cmp;
+    return (cmp_val == *chain_conv(chain, int));
 }
 
 int test_chain__append_and_trim()
@@ -21,7 +22,8 @@ int test_chain__append_and_trim()
     for (int i = 0; i < 3; ++i) {
         chain_append(chain, i);
     }
-    assert(chain == chain_find_condition(chain, tmp_cond));
+    int zero = 0;
+    assert(chain == chain_find_condition(chain, tmp_cond, &zero, sizeof(zero)));
     for (int i = 0; i < 3; ++i) {
         chain_insert(chain, i);
     }

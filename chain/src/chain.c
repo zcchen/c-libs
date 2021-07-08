@@ -67,15 +67,16 @@ struct chain_t* chain_find_tail(struct chain_t *chain)
     return chain;
 }
 
-struct chain_t* chain_find_condition(struct chain_t *chain,
-                                     bool (*condition)(const void* obj, const size_t size))
+struct chain_t* chain_find_condition(struct chain_t *chain, bool (*condition)
+        (const struct chain_t* chain, const void* cmp, const size_t cmp_s),
+        const void* cmp, const size_t cmp_s)
 {
     if (!chain) {
         return NULL;
     }
     chain = chain_find_head(chain);
     while (chain->next) {
-        if (condition(chain->obj, chain->size)) {
+        if (condition(chain, cmp, cmp_s)) {
             break;
         }
         chain = chain->next;

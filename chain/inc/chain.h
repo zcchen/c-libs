@@ -61,13 +61,16 @@ enum chain_error {
     }                                                   \
 } while (0)
 
+#define chain_conv(chain, type) \
+    (sizeof(type) != chain->size ? NULL : (type*)(chain->obj))
+
 struct chain_t* chain_find_head(struct chain_t *chain);
 struct chain_t* chain_find_tail(struct chain_t *chain);
 
 // find the first obj which matches the condition func.
-struct chain_t* chain_find_condition(struct chain_t *chain,
-                                     bool (*condition)(const void* obj, const size_t size));
-
+struct chain_t* chain_find_condition(struct chain_t *chain, bool (*condition)
+        (const struct chain_t* chain, const void* cmp, const size_t cmp_s),
+        const void* cmp, const size_t cmp_s);
 
 struct chain_t* chainnode_create(struct chain_t* prev, struct chain_t* next,
                                  const void* obj, const size_t size);
