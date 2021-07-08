@@ -21,16 +21,25 @@ enum chain_error {
 };
 
 // append new obj at tail
-#define chain_append(chain, obj) do {                                       \
+#define chain_append_obj(chain, obj) do {                                   \
     if (!chain) chain = chainnode_create(NULL, NULL, &obj, sizeof(obj));    \
     else chainnode_create(chain_find_tail(chain), NULL, &obj, sizeof(obj)); \
 } while (0)
+#define chain_append_ptr(chain, ptr, size) do {                     \
+    if (!chain) chain = chainnode_create(NULL, NULL, ptr, size);    \
+    else chainnode_create(chain_find_tail(chain), NULL, ptr, size); \
+} while (0)
 
 // insert new obj at head
-#define chain_insert(chain, obj) do {                                               \
+#define chain_insert_obj(chain, obj) do {                                           \
     if (!chain) chain = chainnode_create(NULL, NULL, &obj, sizeof(obj));            \
     else chain = chainnode_create(NULL, chain_find_head(chain), &obj, sizeof(obj)); \
 } while (0)
+#define chain_insert_ptr(chain, ptr, size) do {                             \
+    if (!chain) chain = chainnode_create(NULL, NULL, ptr, size);            \
+    else chain = chainnode_create(NULL, chain_find_head(chain), ptr, size); \
+} while (0)
+
 
 //int chain_append_ptr(struct chain_t *chain, const void* obj, const size_t size);
 
