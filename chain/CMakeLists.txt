@@ -1,0 +1,7 @@
+SET(LIBNAME "chain")
+
+ADD_SUBDIRECTORY("inc/")
+ADD_SUBDIRECTORY("src/")
+
+ADD_SUBDIRECTORY("tests/")
+

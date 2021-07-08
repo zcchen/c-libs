@@ -1,0 +1,10 @@
+FILE(GLOB_RECURSE src_files "*.c")
+
+ADD_LIBRARY(${LIBNAME} STATIC ${src_files})
+TARGET_INCLUDE_DIRECTORIES(${LIBNAME} PUBLIC "${PROJECT_SOURCE_DIR}/${LIBNAME}/inc")
+
+INSTALL(TARGETS ${LIBNAME}
+        PUBLIC_HEADER DESTINATION include
+        ARCHIVE DESTINATION lib
+    )
+# add source code packing support.
