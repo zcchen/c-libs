@@ -35,7 +35,7 @@ struct dataframes_var_t {
     union dataframes_value_t {
         struct dataframes_list_t* list; // lib will deep-copy the list and point to here
         char* strptr;   // Library will free it when this data struct is destroyed.
-        struct rawbuf_t rawbuf;
+        struct rawbuf_t rawbuf; // Please set {.len=0, .buf=NULL} to init
         uint8_t uint8;
         int8_t int8;
         uint16_t uint16;
@@ -165,6 +165,7 @@ size_t dataframes_list__getsize(const struct dataframes_list_t *l);
 // set the dataframes value
 int dataframes_list__setvalue(struct dataframes_list_t *l, const size_t index,
                               const enum dataframes_type_t type, const void* value);
+int dataframes_list__initvalue(struct dataframes_list_t *l, const size_t index);
 
 int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
                                     uint8_t *buffer, const size_t maxlen, size_t* conv_len);

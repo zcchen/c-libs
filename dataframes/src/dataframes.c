@@ -29,6 +29,25 @@ struct dataframes_var_t* dataframes_var__create(void)
 
 int dataframes_var__init(struct dataframes_var_t* frame)
 {   // Set it to NULL LIST, a.k.a. empty data
+    switch (frame->type) {
+        case dataframes_LIST_T:
+            if (frame->value.list) {
+                dataframes_list__destroy(frame->value.list);
+            }
+            break;
+        case dataframes_STRING:
+            if (frame->value.strptr) {
+                free(frame->value.strptr);
+            }
+            break;
+        case dataframes_RAWBUF:
+            if (frame->value.rawbuf.buf) {
+                free(frame->value.rawbuf.buf);
+            }
+            break;
+        default:
+            break;
+    }
     frame->type = dataframes_LIST_T;
     frame->value.list = NULL;
     return DATAFRAMES__OK;
@@ -261,9 +280,18 @@ int dataframes_list__setvalue(struct dataframes_list_t *l, const size_t index,
         return DATAFRAMES__OVER_LIST_CAPACITY;
     }
     struct dataframes_var_t* frame = &l->list[index];
+    dataframes_var__init(frame);
     return dataframes_var__set(frame, type, value);
 }
 
+int dataframes_list__initvalue(struct dataframes_list_t *l, const size_t index)
+{
+    if (index >= l->capacity) {
+        return DATAFRAMES__OVER_LIST_CAPACITY;
+    }
+    struct dataframes_var_t* frame = &l->list[index];
+    return dataframes_var__init(frame);
+}
 
 
 struct dataframes_t* dataframes__create(const uint8_t head, const uint8_t tail,
