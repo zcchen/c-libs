@@ -1,6 +1,7 @@
 #include "object.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 struct object_t* object_create()
 {
@@ -14,7 +15,18 @@ struct object_t* object_create()
 
 void object_destroy(struct object_t *obj)
 {
-    object_purge(obj);
+    if (!obj) {
+        return;
+    }
+    if (obj->destroy) {
+        obj->destroy(&obj->instance, &obj->size);
+        obj->destroy = NULL;
+    }
+    if (obj->instance) {
+        free(obj->instance);
+        obj->instance = NULL;
+        obj->size = 0;
+    }
     free(obj);
 }
 
@@ -25,31 +37,21 @@ int object_init(struct object_t *obj)
     }
     obj->instance = NULL;
     obj->size = 0;
-    obj->purge = NULL;
-    return OBJECT_OK;
-}
-
-int object_purge(struct object_t *obj)
-{
-    if (!obj) {
-        return OBJECT_ERR_NULL_POINTER;
-    }
-    if (obj->purge) {
-        return obj->purge(obj->instance, obj->size);
-    }
+    obj->destroy = NULL;
     return OBJECT_OK;
 }
 
 int object_set_pointer(struct object_t *obj, void* instance, const size_t size,
-                       int (* purge)(void*, size_t))
+                       void (* destroy)(void** instance, size_t* size))
 {
     if (!obj) {
         return OBJECT_ERR_NULL_POINTER;
     }
-    obj->instance = instance;
+    obj->instance = malloc(size);
+    memcpy(obj->instance, instance, size);
     obj->size = size;
-    if (purge) {
-        obj->purge = purge;
+    if (destroy) {
+        obj->destroy = destroy;
     }
     return OBJECT_OK;
 }

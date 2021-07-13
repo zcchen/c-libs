@@ -17,7 +17,7 @@ enum object_err_t {
 struct object_t {
     void* instance;
     size_t size;
-    int (* purge)(void* instance, size_t size);
+    void (* destroy)(void** instance, size_t* size);
 };
 
 // memory operation functions
@@ -27,9 +27,6 @@ void object_destroy(struct object_t *obj);
 // do the default init operation
 int object_init(struct object_t *obj);
 
-// exec the obj->purge() function,
-int object_purge(struct object_t *obj);
-
 // fill the data to `struct object_t`
 // Please setup `free()` method to free the obj->instance if it is allocate by malloc.
 #define object_set_instance(obj, instance, purge_func)  \
@@ -37,7 +34,7 @@ int object_purge(struct object_t *obj);
         object_set_pointer(obj, NULL, 0, purge_func) :  \
         object_set_pointer(obj, (void*)(&instance), sizeof(instance), purge_func) )
 int object_set_pointer(struct object_t *obj, void* instance, const size_t size,
-                       int (* purge)(void* instance, size_t size));
+                       void (* destroy)(void** instance, size_t* size));
 
 #define object_get(obj, type)   \
     (object_get_size(obj) == sizeof(type) ? (type*)object_get_instance(obj) : NULL)

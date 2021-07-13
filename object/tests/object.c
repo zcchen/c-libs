@@ -12,21 +12,19 @@ void object_print(const struct object_t *obj)
     printf("--> object         : %p\n", obj);
     printf("--> object.instance: %p\n", obj->instance);
     printf("--> object.size    : %ld\n", obj->size);
-    printf("--> object.purge   : %p\n", obj->purge);
+    printf("--> object.destroy : %p\n", obj->destroy);
     printf("-------------------------------\n");
 }
 
-int obj_purge__print(void* instance, size_t size)
+void obj_purge__print(void** instance, size_t *size)
 {
     printf(">>> purging print ...\n");
-    return 0;
 }
 
-int obj_purge__free(void* instance, size_t size)
+void obj_purge__free(void** instance, size_t *size)
 {
     printf(">>> purging free ...\n");
-    free(instance);
-    return 0;
+    free(*instance);
 }
 
 int test_object__create_destroy()
@@ -60,8 +58,6 @@ int test_object__init_set_purge_with_NULL()
     assert(0 == object_set_pointer(&obj, NULL, 0, obj_purge__print));
     assert(NULL == obj.instance);
     assert(0 == obj.size);
-    assert(obj_purge__print == obj.purge);
-    assert(0 == object_purge(&obj));
     assert(NULL == object_get(&obj, void*));
 
     object_print(&obj);
@@ -81,8 +77,6 @@ int test_object__init_set_purge_with_int()
     assert(0 == object_set_instance(&obj, val, obj_purge__print));
     assert(&val == obj.instance);
     assert(sizeof(val) == obj.size);
-    assert(obj_purge__print == obj.purge);
-    assert(0 == object_purge(&obj));
     assert(&val == object_get(&obj, int));
 
     object_print(&obj);

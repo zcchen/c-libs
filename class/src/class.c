@@ -21,19 +21,19 @@ void class_destroy(struct class_t *cls)
     }
     class_call_func_clean(walk_cls);
     while (walk_cls) {
-        struct class_t *ptr = walk_cls;
+        struct class_t *cur_cls = walk_cls;
         walk_cls = walk_cls->parent;
-        if (ptr->destroy) {
-            ptr->destroy(&ptr->obj, &ptr->size);
-            ptr->destroy = NULL;
+        if (cur_cls->destroy) {
+            cur_cls->destroy(&cur_cls->obj, &cur_cls->size);
+            cur_cls->destroy = NULL;
         }
-        if (ptr->obj) {
-            free(ptr->obj);
-            ptr->obj = NULL;
-            ptr->size = 0;
+        if (cur_cls->obj) {
+            free(cur_cls->obj);
+            cur_cls->obj = NULL;
+            cur_cls->size = 0;
         }
-        free(ptr);
-        ptr = NULL;
+        free(cur_cls);
+        cur_cls = NULL;
     }
 }
 
