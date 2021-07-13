@@ -13,6 +13,7 @@ struct chain_t {
     struct chain_t *next;
     void *obj;      // the object holder
     size_t size;    // the object size
+    void (* destroy)(void **obj, size_t *size); // the wrapper to destroy the obj object.
 };
 
 enum chain_error {
@@ -21,23 +22,23 @@ enum chain_error {
 };
 
 // append new obj at tail
-#define chain_append_obj(chain, obj) do {                                   \
-    if (!chain) chain = chainnode_create(NULL, NULL, &obj, sizeof(obj));    \
-    else chainnode_create(chain_find_tail(chain), NULL, &obj, sizeof(obj)); \
+#define chain_append_obj(chain, obj, destroyMethod) do {                                      \
+    if (!chain) chain = chainnode_create(NULL, NULL, &obj, sizeof(obj), destroyMethod);       \
+    else chainnode_create(chain_find_tail(chain), NULL, &obj, sizeof(obj), destroyMethod);    \
 } while (0)
-#define chain_append_ptr(chain, ptr, size) do {                     \
-    if (!chain) chain = chainnode_create(NULL, NULL, ptr, size);    \
-    else chainnode_create(chain_find_tail(chain), NULL, ptr, size); \
+#define chain_append_ptr(chain, ptr, size, destroyMethod) do {                        \
+    if (!chain) chain = chainnode_create(NULL, NULL, ptr, size, destroyMethod);       \
+    else chainnode_create(chain_find_tail(chain), NULL, ptr, size, destroyMethod);    \
 } while (0)
 
 // insert new obj at head
-#define chain_insert_obj(chain, obj) do {                                           \
-    if (!chain) chain = chainnode_create(NULL, NULL, &obj, sizeof(obj));            \
-    else chain = chainnode_create(NULL, chain_find_head(chain), &obj, sizeof(obj)); \
+#define chain_insert_obj(chain, obj, destroyMethod) do {                                         \
+    if (!chain) chain = chainnode_create(NULL, NULL, &obj, sizeof(obj), destroyMethod);          \
+    else chain = chainnode_create(NULL, chain_find_head(chain), &obj, sizeof(obj), destroyMethod);\
 } while (0)
-#define chain_insert_ptr(chain, ptr, size) do {                             \
-    if (!chain) chain = chainnode_create(NULL, NULL, ptr, size);            \
-    else chain = chainnode_create(NULL, chain_find_head(chain), ptr, size); \
+#define chain_insert_ptr(chain, ptr, size, destroyMethod) do {                             \
+    if (!chain) chain = chainnode_create(NULL, NULL, ptr, size, destroyMethod);            \
+    else chain = chainnode_create(NULL, chain_find_head(chain), ptr, size, destroyMethod); \
 } while (0)
 
 
@@ -82,7 +83,8 @@ struct chain_t* chain_find_condition(struct chain_t *chain, bool (*condition)
         const void* cmp, const size_t cmp_s);
 
 struct chain_t* chainnode_create(struct chain_t* prev, struct chain_t* next,
-                                 const void* obj, const size_t size);
+                                 const void* obj, const size_t size,
+                                 void (* destroy)(void **obj, size_t *size));
 int chainnode_destroy(struct chain_t* node);
 
 #ifdef __cplusplus

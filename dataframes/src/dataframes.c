@@ -5,8 +5,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <stdio.h>
-
 // private checksum funcions
 static uint16_t _checksum_sum(uint16_t last, volatile uint8_t *raw_data, const size_t size)
 {
@@ -181,6 +179,8 @@ int dataframes_list__init(struct dataframes_list_t *l, size_t capacity)
         l->list = var_list;
     }
     for (int i = 0; i < capacity; ++i) {
+        l->list[i].type = dataframes_LIST_T;
+        l->list[i].value.list = NULL;
         if (dataframes_var__init(&l->list[i])) {
             free(l->list);
             l->capacity = 0;
@@ -599,7 +599,7 @@ int dataframes__getdata(const struct dataframes_t *frames, struct dataframes_lis
     // 2. get data from data->frames, since it is allocate and checked.
     size_t tmp_decoded_len = 0;
     int ret = dataframes_list__conv_from_buffer(data, frames->data.frames,
-                                      frames->data.capacity, &tmp_decoded_len);
+                                      frames->data.size, &tmp_decoded_len);
     if (ret) {
         return ret;
     }

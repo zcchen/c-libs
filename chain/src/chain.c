@@ -3,16 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <stdio.h>
-
 struct chain_t* chainnode_create(struct chain_t* prev, struct chain_t* next,
-                                 const void* obj, const size_t size)
+                                 const void* obj, const size_t size,
+                                 void (* destroy)(void **obj, size_t *size))
 {
+    if (!obj) {
+        return NULL;
+    }
     struct chain_t *ret = malloc(sizeof(struct chain_t));
     ret->next = next;
     ret->prev = prev;
     ret->obj = malloc(size);
     ret->size = size;
+    ret->destroy = destroy;
     if (!memcpy(ret->obj, obj, size)) { // memcpy failed
         free(ret->obj);
         free(ret);
@@ -38,7 +41,13 @@ int chainnode_destroy(struct chain_t* node)
     if (node->prev) {
         node->prev->next = node->next;
     }
-    free(node->obj);
+    if (node->destroy) {
+        node->destroy(&node->obj, &node->size);
+        node->destroy = NULL;
+    }
+    if (node->obj) {
+        free(node->obj);
+    }
     node->size = 0;
     free(node);
     node = NULL;

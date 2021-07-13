@@ -20,12 +20,12 @@ int test_chain__append_and_trim()
 
     printf(">>> try to append the objects to chain...\n");
     for (int i = 0; i < 3; ++i) {
-        chain_append_obj(chain, i);
+        chain_append_obj(chain, i, NULL);
     }
     int zero = 0;
     assert(chain == chain_find_condition(chain, tmp_cond, &zero, sizeof(zero)));
     for (int i = 0; i < 3; ++i) {
-        chain_insert_ptr(chain, &i, sizeof(i));
+        chain_insert_ptr(chain, &i, sizeof(i), NULL);
     }
 
     printf(">>> printing the objects in chain...\n");

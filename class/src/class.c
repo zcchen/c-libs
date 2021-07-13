@@ -23,17 +23,28 @@ void class_destroy(struct class_t *cls)
     while (walk_cls) {
         struct class_t *ptr = walk_cls;
         walk_cls = walk_cls->parent;
+        if (ptr->destroy) {
+            ptr->destroy(&ptr->obj, &ptr->size);
+            ptr->destroy = NULL;
+        }
+        if (ptr->obj) {
+            free(ptr->obj);
+            ptr->obj = NULL;
+            ptr->size = 0;
+        }
         free(ptr);
+        ptr = NULL;
     }
 }
 
 int class_init(struct class_t *cls)
 {
     cls->status.byte = 0x00;
-    cls->obj = NULL;
-    cls->size = 0;
     cls->parent = NULL;
     cls->child = NULL;
+    cls->obj = NULL;
+    cls->size = 0;
+    cls->destroy = NULL;
     cls->methods.base.setup = NULL;
     cls->methods.base.clean = NULL;
     for (int j = 0; j < CLASS_MAX_USER_METHODS; ++j) {
@@ -43,11 +54,13 @@ int class_init(struct class_t *cls)
 }
 
 // set the outest level
-int class_set_obj(struct class_t *cls, void* obj, const size_t size)
+int class_set_obj(struct class_t *cls, void* obj, const size_t size,
+                  void (* destroy)(void **obj, size_t *size))
 {
     cls->status.bits.lock = 1;
     cls->obj = obj;
     cls->size = size;
+    cls->destroy = destroy;
     cls->status.bits.lock = 0;
     return CLASS_OK;
 }

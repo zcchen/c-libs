@@ -19,10 +19,11 @@ struct class_t {
             uint8_t lock: 1;
         } bits;
     } status;
-    void *obj;
-    size_t size;
     struct class_t *parent;
     struct class_t *child;
+    void *obj;
+    size_t size;
+    void (* destroy)(void **obj, size_t *size); // the wrapper to destroy the obj object.
     struct {
         struct {
             int (* setup)(void* self, const size_t self_size);    // constructor
@@ -50,7 +51,8 @@ void class_destroy(struct class_t *cls);
 int class_init(struct class_t *cls);
 
 // set the outest level
-int class_set_obj(struct class_t *cls, void* obj, const size_t size);
+int class_set_obj(struct class_t *cls, void* obj, const size_t size,
+                  void (* destroy)(void **obj, size_t *size));
 int class_set_func_base(struct class_t *cls,
                         int (* setup)(void*, const size_t), int (* clean)(void*, const size_t));
 int class_set_func_user(struct class_t *cls, const size_t func_id,
