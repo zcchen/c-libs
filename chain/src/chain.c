@@ -47,6 +47,7 @@ int chainnode_destroy(struct chain_t* node)
     }
     if (node->obj) {
         free(node->obj);
+        node->obj = NULL;
     }
     node->size = 0;
     free(node);

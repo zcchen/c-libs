@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <stdio.h>
+
 // private checksum funcions
 static uint16_t _checksum_sum(uint16_t last, volatile uint8_t *raw_data, const size_t size)
 {
@@ -80,6 +82,41 @@ void dataframes_var__destroy(struct dataframes_var_t* frame)
 {
     __dataframes_var__destroy(frame);
     free(frame);
+}
+
+size_t dataframes_var__getsize(struct dataframes_var_t* frame)
+{
+    if (!frame) {
+        return 0;
+    }
+    switch (frame->type) {
+        case dataframes_LIST_T:
+            return dataframes_list__getsize(frame->value.list);
+        case dataframes_STRING:
+            return strlen((char*)frame->value.strptr);
+        case dataframes_RAWBUF:
+            return frame->value.rawbuf.len;
+        case dataframes_UINT8_T:
+        case dataframes_INT8_T:
+            return sizeof(uint8_t);
+        case dataframes_UINT16_T:
+        case dataframes_INT16_T:
+            return sizeof(uint16_t);
+        case dataframes_UINT32_T:
+        case dataframes_INT32_T:
+            return sizeof(uint32_t);
+        case dataframes_UINT64_T:
+        case dataframes_INT64_T:
+            return sizeof(uint64_t);
+        case dataframes_FLOAT:
+            return sizeof(float);
+        case dataframes_DOUBLE:
+            return sizeof(double);
+        case dataframes_LONGDOUBLE:
+            return sizeof(long double);
+        default:
+            return 0;
+    }
 }
 
 int dataframes_var__set(struct dataframes_var_t* frame,
@@ -238,7 +275,7 @@ int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_lis
     return DATAFRAMES__OK;
 }
 
-size_t dataframes_list__get_var_num(const struct dataframes_list_t *l)
+size_t dataframes_list__getsize(const struct dataframes_list_t *l)
 {
     size_t ret = 0;
     if (!l) {       // for the just NULL
@@ -247,7 +284,7 @@ size_t dataframes_list__get_var_num(const struct dataframes_list_t *l)
     for (int i = 0; i < l->capacity; ++i) {
         if (l->list[i].type == dataframes_LIST_T) {
             if (l->list[i].value.list) {
-                ret += dataframes_list__get_var_num(l->list[i].value.list);
+                ret += dataframes_list__getsize(l->list[i].value.list);
             }
             else {
                 break;
@@ -258,19 +295,6 @@ size_t dataframes_list__get_var_num(const struct dataframes_list_t *l)
         }
     }
     return ret;
-}
-
-size_t dataframes_list__getsize(const struct dataframes_list_t *l)
-{
-    if (!l) {       // for the just NULL
-        return 0;
-    }
-    for (int i = 0; i < l->capacity; ++i) {
-        if (l->list[i].type == dataframes_LIST_T && l->list[i].value.list == NULL) {
-            return i;
-        }
-    }
-    return l->capacity;
 }
 
 int dataframes_list__setvalue(struct dataframes_list_t *l, const size_t index,
@@ -740,6 +764,7 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
         struct dataframes_var_t *var = &l->list[i];
         size_t try_decoding_len = 0;
         int tmp_ret = 0;
+printf("var->type: %d\n", var->type);
         switch (var->type) {
             case dataframes_LIST_T:
                 tmp_ret = dataframes_list__conv_from_buffer(var->value.list,
@@ -750,16 +775,20 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
                 pri_decoded_len += try_decoding_len;
                 break;
             case dataframes_STRING:
+printf("here1.\n");
                 try_decoding_len = strlen((char*)(buffer + pri_decoded_len));
                 if (try_decoding_len + 1 > maxlen - pri_decoded_len) {
                     return DATAFRAMES__BUFFER_CHAR_OVERFLOW; // buffer char* overflow
                 }
+printf("here2.\n");
                 if (var->value.strptr) {
                     free(var->value.strptr);
                 }
+printf("here3.\n");
                 var->value.strptr = malloc(try_decoding_len + 1);
                 strncpy(var->value.strptr, (char*)(buffer+pri_decoded_len), try_decoding_len);
                 pri_decoded_len += try_decoding_len + 1;    // including the '\0' char.
+printf("here4.\n");
                 break;
             case dataframes_RAWBUF:
                 if (var->value.rawbuf.len == 0) {  // take the rest of all.
