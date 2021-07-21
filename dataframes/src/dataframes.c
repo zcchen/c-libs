@@ -5,8 +5,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <stdio.h>
-
 // private checksum funcions
 static uint16_t _checksum_sum(uint16_t last, volatile uint8_t *raw_data, const size_t size)
 {
@@ -91,7 +89,7 @@ size_t dataframes_var__getsize(struct dataframes_var_t* frame)
     }
     switch (frame->type) {
         case dataframes_LIST_T:
-            return dataframes_list__getsize(frame->value.list);
+            return dataframes_list__getsize(frame->value.list, true);
         case dataframes_STRING:
             return strlen((char*)frame->value.strptr);
         case dataframes_RAWBUF:
@@ -236,7 +234,7 @@ void dataframes_list__destroy(struct dataframes_list_t *l)
 
 int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_list_t* src) {
     *dest = dataframes_list__create(src->capacity);
-    for (int i = 0; i < dataframes_list__getsize(src); ++i) {
+    for (int i = 0; i < dataframes_list__getsize(src, false); ++i) {
         (*dest)->list[i].type = src->list[i].type;
         if (src->list[i].type == dataframes_LIST_T) {
             int ret = dataframes_list__copy(&(*dest)->list[i].value.list,
@@ -249,8 +247,7 @@ int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_lis
         else if (src->list[i].type == dataframes_STRING) {
             size_t string_size = strlen((char*)src->list[i].value.strptr);
             (*dest)->list[i].value.strptr = malloc(string_size + 1);
-            if (!strncpy((*dest)->list[i].value.strptr, src->list[i].value.strptr,
-                         string_size + 1)) {
+            if (!strcpy((*dest)->list[i].value.strptr, src->list[i].value.strptr)) {
                 // no chars copy to frame->value.strptr,
                 free((*dest)->list[i].value.strptr);
                 (*dest)->list[i].value.strptr = NULL;
@@ -275,7 +272,7 @@ int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_lis
     return DATAFRAMES__OK;
 }
 
-size_t dataframes_list__getsize(const struct dataframes_list_t *l)
+size_t dataframes_list__getsize(const struct dataframes_list_t *l, bool include_nested)
 {
     size_t ret = 0;
     if (!l) {       // for the just NULL
@@ -283,11 +280,16 @@ size_t dataframes_list__getsize(const struct dataframes_list_t *l)
     }
     for (int i = 0; i < l->capacity; ++i) {
         if (l->list[i].type == dataframes_LIST_T) {
-            if (l->list[i].value.list) {
-                ret += dataframes_list__getsize(l->list[i].value.list);
+            if (include_nested) {
+                if (l->list[i].value.list) {
+                    ret += dataframes_list__getsize(l->list[i].value.list, include_nested);
+                }
+                else {
+                    break;
+                }
             }
             else {
-                break;
+                ret += 1;
             }
         }
         else {
@@ -638,7 +640,7 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
 {
     *conv_len = 0;
     size_t conv_size = 0;
-    for (int i = 0; i < dataframes_list__getsize(l); ++i) {
+    for (int i = 0; i < dataframes_list__getsize(l, false); ++i) {
         struct dataframes_var_t *var = &l->list[i];
         size_t try_to_conv_len = 0;
         int tmp_ret = 0;
@@ -760,11 +762,10 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
 {
     *decoded_len = 0;
     size_t pri_decoded_len = 0;
-    for (int i = 0; i < dataframes_list__getsize(l); ++i) {
-        struct dataframes_var_t *var = &l->list[i];
+    for (int i = 0; i < dataframes_list__getsize(l, false); ++i) {
+        struct dataframes_var_t *var = &(l->list[i]);
         size_t try_decoding_len = 0;
         int tmp_ret = 0;
-printf("var->type: %d\n", var->type);
         switch (var->type) {
             case dataframes_LIST_T:
                 tmp_ret = dataframes_list__conv_from_buffer(var->value.list,
@@ -775,20 +776,17 @@ printf("var->type: %d\n", var->type);
                 pri_decoded_len += try_decoding_len;
                 break;
             case dataframes_STRING:
-printf("here1.\n");
                 try_decoding_len = strlen((char*)(buffer + pri_decoded_len));
                 if (try_decoding_len + 1 > maxlen - pri_decoded_len) {
                     return DATAFRAMES__BUFFER_CHAR_OVERFLOW; // buffer char* overflow
                 }
-printf("here2.\n");
                 if (var->value.strptr) {
                     free(var->value.strptr);
+                    var->value.strptr = NULL;
                 }
-printf("here3.\n");
                 var->value.strptr = malloc(try_decoding_len + 1);
                 strncpy(var->value.strptr, (char*)(buffer+pri_decoded_len), try_decoding_len);
                 pri_decoded_len += try_decoding_len + 1;    // including the '\0' char.
-printf("here4.\n");
                 break;
             case dataframes_RAWBUF:
                 if (var->value.rawbuf.len == 0) {  // take the rest of all.

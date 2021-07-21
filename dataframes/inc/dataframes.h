@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 //#include "ringbuf.h"
 
@@ -161,7 +162,7 @@ void dataframes_list__destroy(struct dataframes_list_t *l);
 int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_list_t* src);
 
 // get the dataframes capacity
-size_t dataframes_list__getsize(const struct dataframes_list_t *l);
+size_t dataframes_list__getsize(const struct dataframes_list_t *l, bool include_nested);
 // set the dataframes value
 int dataframes_list__setvalue(struct dataframes_list_t *l, const size_t index,
                               const enum dataframes_type_t type, const void* value);
