@@ -25,6 +25,7 @@ void obj_purge__free(void** instance, size_t *size)
 {
     printf(">>> purging free ...\n");
     free(*instance);
+    *instance = NULL;
 }
 
 int test_object__create_destroy()
@@ -75,9 +76,9 @@ int test_object__init_set_purge_with_int()
 
     int val = 1;
     assert(0 == object_set_instance(&obj, val, obj_purge__print));
-    assert(&val == obj.instance);
+    assert(val == *(int*)obj.instance);    // check the value if same
     assert(sizeof(val) == obj.size);
-    assert(&val == object_get(&obj, int));
+    assert(obj.instance == object_get(&obj, int));
 
     object_print(&obj);
     printf("-------------------------------------------------------------------\n");
