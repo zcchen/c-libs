@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <stdio.h>
+
 // private checksum funcions
 static uint16_t _checksum_sum(uint16_t last, volatile uint8_t *raw_data, const size_t size)
 {
@@ -237,17 +239,23 @@ int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_lis
     for (int i = 0; i < dataframes_list__getsize(src, false); ++i) {
         (*dest)->list[i].type = src->list[i].type;
         if (src->list[i].type == dataframes_LIST_T) {
-            int ret = dataframes_list__copy(&(*dest)->list[i].value.list,
-                                            src->list[i].value.list);
-            if (ret) {
-                (*dest)->list[i].value.list = NULL;
-                return ret;
+            if (src->list[i].value.list) {
+                int ret = dataframes_list__copy(&(*dest)->list[i].value.list,
+                                                src->list[i].value.list);
+                if (ret) {
+                    (*dest)->list[i].value.list = NULL;
+                    return ret;
+                }
             }
         }
         else if (src->list[i].type == dataframes_STRING) {
-            size_t string_size = strlen((char*)src->list[i].value.strptr);
-            (*dest)->list[i].value.strptr = malloc(string_size + 1);
-            if (!strcpy((*dest)->list[i].value.strptr, src->list[i].value.strptr)) {
+            size_t str_size = 0;
+            if (src->list[i].value.strptr) {
+                str_size = strlen((char*)src->list[i].value.strptr);
+            }
+printf("+-> str_size: %ld\n", str_size);
+            (*dest)->list[i].value.strptr = malloc(str_size + 1);
+            if (!strncpy((*dest)->list[i].value.strptr, src->list[i].value.strptr, str_size)) {
                 // no chars copy to frame->value.strptr,
                 free((*dest)->list[i].value.strptr);
                 (*dest)->list[i].value.strptr = NULL;
