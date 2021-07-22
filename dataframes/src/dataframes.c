@@ -5,8 +5,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <stdio.h>
-
 // private checksum funcions
 static uint16_t _checksum_sum(uint16_t last, volatile uint8_t *raw_data, const size_t size)
 {
@@ -33,16 +31,20 @@ int dataframes_var__init(struct dataframes_var_t* frame)
         case dataframes_LIST_T:
             if (frame->value.list) {
                 dataframes_list__destroy(frame->value.list);
+                frame->value.list = NULL;
             }
             break;
         case dataframes_STRING:
             if (frame->value.strptr) {
                 free(frame->value.strptr);
+                frame->value.strptr = NULL;
             }
             break;
         case dataframes_RAWBUF:
             if (frame->value.rawbuf.buf) {
                 free(frame->value.rawbuf.buf);
+                frame->value.rawbuf.buf = NULL;
+                frame->value.rawbuf.len = 0;
             }
             break;
         default:
@@ -253,9 +255,9 @@ int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_lis
             if (src->list[i].value.strptr) {
                 str_size = strlen((char*)src->list[i].value.strptr);
             }
-printf("+-> str_size: %ld\n", str_size);
             (*dest)->list[i].value.strptr = malloc(str_size + 1);
-            if (!strncpy((*dest)->list[i].value.strptr, src->list[i].value.strptr, str_size)) {
+            if (!strncpy((*dest)->list[i].value.strptr,
+                         src->list[i].value.strptr, str_size + 1)) {
                 // no chars copy to frame->value.strptr,
                 free((*dest)->list[i].value.strptr);
                 (*dest)->list[i].value.strptr = NULL;
@@ -793,7 +795,8 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
                     var->value.strptr = NULL;
                 }
                 var->value.strptr = malloc(try_decoding_len + 1);
-                strncpy(var->value.strptr, (char*)(buffer+pri_decoded_len), try_decoding_len);
+                strncpy(var->value.strptr, (char*)(buffer + pri_decoded_len),
+                        try_decoding_len + 1);
                 pri_decoded_len += try_decoding_len + 1;    // including the '\0' char.
                 break;
             case dataframes_RAWBUF:
