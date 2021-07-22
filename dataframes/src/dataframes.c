@@ -31,16 +31,20 @@ int dataframes_var__init(struct dataframes_var_t* frame)
         case dataframes_LIST_T:
             if (frame->value.list) {
                 dataframes_list__destroy(frame->value.list);
+                frame->value.list = NULL;
             }
             break;
         case dataframes_STRING:
             if (frame->value.strptr) {
                 free(frame->value.strptr);
+                frame->value.strptr = NULL;
             }
             break;
         case dataframes_RAWBUF:
             if (frame->value.rawbuf.buf) {
                 free(frame->value.rawbuf.buf);
+                frame->value.rawbuf.buf = NULL;
+                frame->value.rawbuf.len = 0;
             }
             break;
         default:
@@ -80,6 +84,41 @@ void dataframes_var__destroy(struct dataframes_var_t* frame)
 {
     __dataframes_var__destroy(frame);
     free(frame);
+}
+
+size_t dataframes_var__getsize(struct dataframes_var_t* frame)
+{
+    if (!frame) {
+        return 0;
+    }
+    switch (frame->type) {
+        case dataframes_LIST_T:
+            return dataframes_list__getsize(frame->value.list, true);
+        case dataframes_STRING:
+            return strlen((char*)frame->value.strptr);
+        case dataframes_RAWBUF:
+            return frame->value.rawbuf.len;
+        case dataframes_UINT8_T:
+        case dataframes_INT8_T:
+            return sizeof(uint8_t);
+        case dataframes_UINT16_T:
+        case dataframes_INT16_T:
+            return sizeof(uint16_t);
+        case dataframes_UINT32_T:
+        case dataframes_INT32_T:
+            return sizeof(uint32_t);
+        case dataframes_UINT64_T:
+        case dataframes_INT64_T:
+            return sizeof(uint64_t);
+        case dataframes_FLOAT:
+            return sizeof(float);
+        case dataframes_DOUBLE:
+            return sizeof(double);
+        case dataframes_LONGDOUBLE:
+            return sizeof(long double);
+        default:
+            return 0;
+    }
 }
 
 int dataframes_var__set(struct dataframes_var_t* frame,
@@ -199,21 +238,26 @@ void dataframes_list__destroy(struct dataframes_list_t *l)
 
 int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_list_t* src) {
     *dest = dataframes_list__create(src->capacity);
-    for (int i = 0; i < dataframes_list__getsize(src); ++i) {
+    for (int i = 0; i < dataframes_list__getsize(src, false); ++i) {
         (*dest)->list[i].type = src->list[i].type;
         if (src->list[i].type == dataframes_LIST_T) {
-            int ret = dataframes_list__copy(&(*dest)->list[i].value.list,
-                                            src->list[i].value.list);
-            if (ret) {
-                (*dest)->list[i].value.list = NULL;
-                return ret;
+            if (src->list[i].value.list) {
+                int ret = dataframes_list__copy(&(*dest)->list[i].value.list,
+                                                src->list[i].value.list);
+                if (ret) {
+                    (*dest)->list[i].value.list = NULL;
+                    return ret;
+                }
             }
         }
         else if (src->list[i].type == dataframes_STRING) {
-            size_t string_size = strlen((char*)src->list[i].value.strptr);
-            (*dest)->list[i].value.strptr = malloc(string_size + 1);
-            if (!strncpy((*dest)->list[i].value.strptr, src->list[i].value.strptr,
-                         string_size + 1)) {
+            size_t str_size = 0;
+            if (src->list[i].value.strptr) {
+                str_size = strlen((char*)src->list[i].value.strptr);
+            }
+            (*dest)->list[i].value.strptr = malloc(str_size + 1);
+            if (!strncpy((*dest)->list[i].value.strptr,
+                         src->list[i].value.strptr, str_size + 1)) {
                 // no chars copy to frame->value.strptr,
                 free((*dest)->list[i].value.strptr);
                 (*dest)->list[i].value.strptr = NULL;
@@ -238,7 +282,7 @@ int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_lis
     return DATAFRAMES__OK;
 }
 
-size_t dataframes_list__get_var_num(const struct dataframes_list_t *l)
+size_t dataframes_list__getsize(const struct dataframes_list_t *l, bool include_nested)
 {
     size_t ret = 0;
     if (!l) {       // for the just NULL
@@ -246,11 +290,16 @@ size_t dataframes_list__get_var_num(const struct dataframes_list_t *l)
     }
     for (int i = 0; i < l->capacity; ++i) {
         if (l->list[i].type == dataframes_LIST_T) {
-            if (l->list[i].value.list) {
-                ret += dataframes_list__get_var_num(l->list[i].value.list);
+            if (include_nested) {
+                if (l->list[i].value.list) {
+                    ret += dataframes_list__getsize(l->list[i].value.list, include_nested);
+                }
+                else {
+                    break;
+                }
             }
             else {
-                break;
+                ret += 1;
             }
         }
         else {
@@ -258,19 +307,6 @@ size_t dataframes_list__get_var_num(const struct dataframes_list_t *l)
         }
     }
     return ret;
-}
-
-size_t dataframes_list__getsize(const struct dataframes_list_t *l)
-{
-    if (!l) {       // for the just NULL
-        return 0;
-    }
-    for (int i = 0; i < l->capacity; ++i) {
-        if (l->list[i].type == dataframes_LIST_T && l->list[i].value.list == NULL) {
-            return i;
-        }
-    }
-    return l->capacity;
 }
 
 int dataframes_list__setvalue(struct dataframes_list_t *l, const size_t index,
@@ -614,7 +650,7 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
 {
     *conv_len = 0;
     size_t conv_size = 0;
-    for (int i = 0; i < dataframes_list__getsize(l); ++i) {
+    for (int i = 0; i < dataframes_list__getsize(l, false); ++i) {
         struct dataframes_var_t *var = &l->list[i];
         size_t try_to_conv_len = 0;
         int tmp_ret = 0;
@@ -736,8 +772,8 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
 {
     *decoded_len = 0;
     size_t pri_decoded_len = 0;
-    for (int i = 0; i < dataframes_list__getsize(l); ++i) {
-        struct dataframes_var_t *var = &l->list[i];
+    for (int i = 0; i < dataframes_list__getsize(l, false); ++i) {
+        struct dataframes_var_t *var = &(l->list[i]);
         size_t try_decoding_len = 0;
         int tmp_ret = 0;
         switch (var->type) {
@@ -756,9 +792,11 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
                 }
                 if (var->value.strptr) {
                     free(var->value.strptr);
+                    var->value.strptr = NULL;
                 }
                 var->value.strptr = malloc(try_decoding_len + 1);
-                strncpy(var->value.strptr, (char*)(buffer+pri_decoded_len), try_decoding_len);
+                strncpy(var->value.strptr, (char*)(buffer + pri_decoded_len),
+                        try_decoding_len + 1);
                 pri_decoded_len += try_decoding_len + 1;    // including the '\0' char.
                 break;
             case dataframes_RAWBUF:

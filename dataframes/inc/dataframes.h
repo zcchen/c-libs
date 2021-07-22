@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 //#include "ringbuf.h"
 
@@ -149,6 +150,8 @@ struct dataframes_var_t* dataframes_var__create(void);
 int dataframes_var__init(struct dataframes_var_t* frame);
 void dataframes_var__destroy(struct dataframes_var_t* frame);
 
+size_t dataframes_var__getsize(struct dataframes_var_t* frame);
+
 // set the dataframes_var
 int dataframes_var__set(struct dataframes_var_t* frame,
                         const enum dataframes_type_t type, const void* value);
@@ -158,10 +161,8 @@ int dataframes_list__init(struct dataframes_list_t *l, size_t capacity);
 void dataframes_list__destroy(struct dataframes_list_t *l);
 int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_list_t* src);
 
-// get the dataframes use size
-size_t dataframes_list__get_var_num(const struct dataframes_list_t *l);
-// get the dataframes use size
-size_t dataframes_list__getsize(const struct dataframes_list_t *l);
+// get the dataframes capacity
+size_t dataframes_list__getsize(const struct dataframes_list_t *l, bool include_nested);
 // set the dataframes value
 int dataframes_list__setvalue(struct dataframes_list_t *l, const size_t index,
                               const enum dataframes_type_t type, const void* value);

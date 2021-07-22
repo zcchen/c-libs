@@ -46,7 +46,7 @@ int test_dataframes__init_encode_decode(struct dataframes_list_t *data,
     assert(0 == dataframes__init(&send_dataframes, 0xAB, 0x66, DATAFRAMES_CHECKSUM_SUM));
 
     printf(">>> Set the <data:%p> to send_dataframes ...\n", data);
-    printf(">>> data list size: %ld\n", dataframes_list__getsize(data));
+    printf(">>> data list size: %ld\n", dataframes_list__getsize(data, false));
     printf("ret for setdata: %d\n", dataframes__setdata(&send_dataframes, data));
     assert(0 == dataframes__setdata(&send_dataframes, data));
     printf_dataframes(&send_dataframes);
@@ -68,18 +68,18 @@ int test_dataframes__init_encode_decode(struct dataframes_list_t *data,
     assert(decoded_size == encoded_size);
 
     printf(">>> Checking the recv datalist ...\n");
-    printf(">>> recv list size: %ld\n", dataframes_list__getsize(recv));
+    printf(">>> recv list size: %ld\n", dataframes_list__getsize(recv, false));
     printf("ret for getdata: %d\n", dataframes__getdata(&recv_dataframes, recv));
     assert(0 == dataframes__getdata(&recv_dataframes, recv));
 
     printf(">>> Checking the used size of recv datalist ...\n");
     if (!data) {    // NULL input
-        assert(0 == dataframes_list__getsize(recv));
+        assert(0 == dataframes_list__getsize(recv, true));
     }
     else {
-        printf("get_var_num <data>: %ld\n", dataframes_list__get_var_num(data));
-        printf("get_var_num <recv>: %ld\n", dataframes_list__get_var_num(recv));
-        assert(dataframes_list__get_var_num(data) == dataframes_list__get_var_num(recv));
+        printf("getsize <data>: %ld\n", dataframes_list__getsize(data, true));
+        printf("getsize <recv>: %ld\n", dataframes_list__getsize(recv, true));
+        assert(dataframes_list__getsize(data, true) == dataframes_list__getsize(recv, true));
     }
 
     printf(">>> all assert test passed <<<\n");

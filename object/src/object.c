@@ -47,9 +47,15 @@ int object_set_pointer(struct object_t *obj, void* instance, const size_t size,
     if (!obj) {
         return OBJECT_ERR_NULL_POINTER;
     }
-    obj->instance = malloc(size);
-    memcpy(obj->instance, instance, size);
-    obj->size = size;
+    if (size) {
+        obj->instance = malloc(size);
+        memcpy(obj->instance, instance, size);
+        obj->size = size;
+    }
+    else {
+        obj->instance = NULL;
+        obj->size = 0;
+    }
     if (destroy) {
         obj->destroy = destroy;
     }
