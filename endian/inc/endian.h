@@ -7,10 +7,10 @@ extern "C" {
 
 // If selecting endian detection at build time,
 // it will use compiler's global definations to check the host endian.
-#define ENDIAN_SETUP_AT_BUILD_TIME 1
+#define ENDIAN_SETUP_AT_BUILD_TIME 0
 
 // Uncomment the below macro, if you know your platform endian and the compiler macro incorrect
-#define BIG_ENDIAN
+//#define BIG_ENDIAN
 //#define LITTLE_ENDIAN
 
 // Usually, little endian platforms are below:
@@ -92,10 +92,10 @@ union endian_tester_t {
     char c[4];
     unsigned long ul;
 };
-const union endian_tester_t endian_tester = {
-    .c = {'l', '?', '?', 'b'},
-};
+#ifndef __get_host_endian
+const union endian_tester_t endian_tester;
 #define __get_host_endian() ((char)(endian_tester.ul))
+#endif
 
 #endif /* if defined(ENDIAN_SETUP_AT_BUILD_TIME) && (ENDIAN_SETUP_AT_BUILD_TIME != 0) */
 
