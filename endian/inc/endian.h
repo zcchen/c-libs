@@ -92,10 +92,8 @@ union endian_tester_t {
     char c[4];
     unsigned long ul;
 };
-#ifndef __get_host_endian
 const union endian_tester_t endian_tester;
 #define __get_host_endian() ((char)(endian_tester.ul))
-#endif
 
 #endif /* if defined(ENDIAN_SETUP_AT_BUILD_TIME) && (ENDIAN_SETUP_AT_BUILD_TIME != 0) */
 

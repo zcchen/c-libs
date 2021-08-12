@@ -22,7 +22,8 @@
    | (((x) & 0x000000000000ff00ull) << 40)  \
    | (((x) & 0x00000000000000ffull) << 56))
 
-#ifdef __get_host_endian
+#if defined(ENDIAN_SETUP_AT_BUILD_TIME) && (ENDIAN_SETUP_AT_BUILD_TIME != 0)
+#else
 const union endian_tester_t endian_tester = {
     .c = {'l', '?', '?', 'b'},
 };
