@@ -24,7 +24,7 @@
 
 #if defined(ENDIAN_SETUP_AT_BUILD_TIME) && (ENDIAN_SETUP_AT_BUILD_TIME != 0)
 #else
-const union endian_tester_t endian_tester = {
+const union endian_checker_t endian_checker = {
     .c = {'l', '?', '?', 'b'},
 };
 #endif

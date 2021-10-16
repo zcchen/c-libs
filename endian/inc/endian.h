@@ -88,12 +88,12 @@ uint64_t clibs_le64toh(uint64_t little_endian_64bits);
 // At little-endian platform, the first char of the `ul` data is `c[0]`;
 // At big-endian platform, the first char of the `ul` data is `c[3]`.
 // Base on that method, it is easy to detect the endian of system.
-union endian_tester_t {
+union endian_checker_t {
     char c[4];
     unsigned long ul;
 };
-const union endian_tester_t endian_tester;
-#define __get_host_endian() ((char)(endian_tester.ul))
+extern const union endian_checker_t endian_checker;
+#define __get_host_endian() ((char)(endian_checker.ul))
 
 #endif /* if defined(ENDIAN_SETUP_AT_BUILD_TIME) && (ENDIAN_SETUP_AT_BUILD_TIME != 0) */
 
