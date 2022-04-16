@@ -5,16 +5,14 @@
 #include <assert.h>
 #include <stdlib.h>
 
-void free_wrapper(void **obj, size_t *size)
+void free_wrapper(void **obj)
 {
     if (*obj) {
         printf("ready4free obj: %p\n", *obj);
         free(*obj);
         *obj = NULL;
-        *size = 0;
     }
     printf("afterFree obj: %p\n", *obj);
-    printf("afterFree size: %ld\n", *size);
 }
 
 int test_chain__append_and_trim()

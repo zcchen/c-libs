@@ -5,7 +5,7 @@
 
 struct chain_t* chainnode_create(struct chain_t* prev, struct chain_t* next,
                                  const void* obj, const size_t size,
-                                 void (* destroy)(void **obj, size_t *size))
+                                 void (* destroy)(void **obj))
 {
     if (!obj) {
         return NULL;
@@ -42,7 +42,7 @@ int chainnode_destroy(struct chain_t* node)
         node->prev->next = node->next;
     }
     if (node->destroy) {
-        node->destroy(&node->obj, &node->size);
+        node->destroy(&node->obj);
         node->destroy = NULL;
     }
     if (node->obj) {

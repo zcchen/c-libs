@@ -13,7 +13,7 @@ struct chain_t {
     struct chain_t *next;
     void *obj;      // the object holder
     size_t size;    // the object size
-    void (* destroy)(void **obj, size_t *size); // the wrapper to destroy the obj object.
+    void (* destroy)(void **obj); // the wrapper to destroy the obj object.
 };
 
 enum chain_error {
@@ -84,7 +84,7 @@ struct chain_t* chain_find_condition(struct chain_t *chain, bool (*condition)
 
 struct chain_t* chainnode_create(struct chain_t* prev, struct chain_t* next,
                                  const void* obj, const size_t size,
-                                 void (* destroy)(void **obj, size_t *size));
+                                 void (* destroy)(void **obj));
 int chainnode_destroy(struct chain_t* node);
 
 #ifdef __cplusplus
