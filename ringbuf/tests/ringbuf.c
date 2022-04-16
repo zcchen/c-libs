@@ -10,7 +10,7 @@
 uint8_t *linebuf_init(size_t size)
 {
     uint8_t *ret = malloc(size * sizeof(uint8_t));
-    for (int i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         *(ret + i) = '\0';
     }
     return ret;
@@ -21,10 +21,10 @@ void ringbuf_print(const struct ringbuf_t *rbuf, const char *s)
     printf("--> ringbuf: %s.\n", s);
     printf("------> head: %d\n", rbuf->head);
     printf("------> tail: %d\n", rbuf->tail);
-    for (int i = 0; i < sizeof(rbuf->buf); ++i) {
-        int index = rbuf->head + i;
+    for (size_t i = 0; i < sizeof(rbuf->buf); ++i) {
+        size_t index = rbuf->head + i;
         if (index < sizeof(rbuf->buf)) {
-            printf("rbuf[%d]: 0x%x\n", index, rbuf->buf[index]);
+            printf("rbuf[%ld]: 0x%x\n", index, rbuf->buf[index]);
         }
         else {
             printf("rbuf[%d]: 0x%x\n",
@@ -43,7 +43,7 @@ int test_ringbuf_push_check_length(const char *buf)
     ret = ringbuf_push(&rbuf, (uint8_t*)buf, strlen(buf), false);
     ringbuf_print(&rbuf, "after pushed");
     assert(ringbuf_used(&rbuf) == ret);
-    if (ret == strlen(buf)) {
+    if (ret == (int)strlen(buf)) {
         return 0;
     }
     else {
@@ -63,14 +63,14 @@ int test_ringbuf_pop_check_length_once_for_all(const char *buf)
     ringbuf_print(&rbuf, "after pop once for all");
 
     printf("pop_buf: \n");
-    int i;
+    size_t i;
     for (i = 0; i < strlen(buf); ++i) {
-        printf("pop_buf[%d]: 0x%x\n", i, pop_buf[i]);
+        printf("pop_buf[%ld]: 0x%x\n", i, pop_buf[i]);
     }
     assert(i == strlen(buf));
     printf("-------------\n");
 
-    if (pop_ret == strlen(buf)) {
+    if (pop_ret == (int)strlen(buf)) {
         return 0;
     }
     else {
@@ -96,8 +96,8 @@ int test_ringbuf_pop_check_length_one_by_one(const char *buf)
     ringbuf_print(&rbuf, "after pop one by one");
 
     printf("pop_buf: \n");
-    for (int i = 0; i < strlen(buf); ++i) {
-        printf("pop_buf[%d]: 0x%x\n", i, pop_buf[i]);
+    for (size_t i = 0; i < strlen(buf); ++i) {
+        printf("pop_buf[%ld]: 0x%x\n", i, pop_buf[i]);
     }
     printf("-------------\n");
 

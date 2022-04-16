@@ -1,18 +1,28 @@
 cmake_minimum_required(VERSION 3.5)
 
-######################## Global CMake Flags Here #####################
-INCLUDE(cmake/settings.cmake)
 SET(DEBUG TRUE)
 SET(RELEASE FALSE)
-SET(PROJECT_NAME c_toolings)
-SET(PROJECT_VERSION_MAJOR 0)
-SET(PROJECT_VERSION_MINOR 1)
-SET(PROJECT_VERSION_PATCH 0)
-######################################################################
-project( ${PROJECT_NAME}
-        VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
+
+project( c_toolings
+        VERSION 0.1.0
         LANGUAGES C
     )
+
+# ------------------ Compiler Settings ---------------------
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+if (CMAKE_C_COMPILER_ID MATCHES "GNU")
+    add_definitions(-D_POSIX_C_SOURCE=200112L)
+    add_definitions(-D_DEFAULT_SOURCE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+endif()
+# --------------- End of Compiler Settings -----------------
+
 
 ######################## Path Settings ###############################
 SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/cmake")

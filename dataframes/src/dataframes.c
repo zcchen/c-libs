@@ -9,7 +9,7 @@
 static uint16_t _checksum_sum(uint16_t last, volatile uint8_t *raw_data, const size_t size)
 {
     uint16_t ret = last;
-    for (int i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         ret += *(raw_data + i);
     }
     return ret;
@@ -205,7 +205,7 @@ struct dataframes_list_t* dataframes_list__create(size_t capacity)
 int dataframes_list__init(struct dataframes_list_t *l, size_t capacity)
 {
     if (l->capacity && l->capacity != capacity) {
-        for (int i = 0; i < l->capacity; ++i) {
+        for (size_t i = 0; i < l->capacity; ++i) {
             __dataframes_var__destroy(&l->list[i]);
         }
         free(l->list);
@@ -217,7 +217,7 @@ int dataframes_list__init(struct dataframes_list_t *l, size_t capacity)
         l->capacity = capacity;
         l->list = var_list;
     }
-    for (int i = 0; i < capacity; ++i) {
+    for (size_t i = 0; i < capacity; ++i) {
         l->list[i].type = dataframes_LIST_T;
         l->list[i].value.list = NULL;
         if (dataframes_var__init(&l->list[i])) {
@@ -238,7 +238,7 @@ void dataframes_list__destroy(struct dataframes_list_t *l)
 
 int dataframes_list__copy(struct dataframes_list_t** dest, struct dataframes_list_t* src) {
     *dest = dataframes_list__create(src->capacity);
-    for (int i = 0; i < dataframes_list__getsize(src, false); ++i) {
+    for (size_t i = 0; i < dataframes_list__getsize(src, false); ++i) {
         (*dest)->list[i].type = src->list[i].type;
         if (src->list[i].type == dataframes_LIST_T) {
             if (src->list[i].value.list) {
@@ -288,7 +288,7 @@ size_t dataframes_list__getsize(const struct dataframes_list_t *l, bool include_
     if (!l) {       // for the just NULL
         return 0;
     }
-    for (int i = 0; i < l->capacity; ++i) {
+    for (size_t i = 0; i < l->capacity; ++i) {
         if (l->list[i].type == dataframes_LIST_T) {
             if (include_nested) {
                 if (l->list[i].value.list) {
@@ -367,7 +367,7 @@ int dataframes__init(struct dataframes_t *frames,
     frames->length.rules.bits.include_tail = 1;
     // init the data frames
     frames->data.capacity = 255;
-    for (int i = 0; i < frames->data.capacity; ++i) {
+    for (size_t i = 0; i < frames->data.capacity; ++i) {
         frames->data.frames[i] = 0x00;
     }
     frames->data.size = 0;
@@ -413,7 +413,7 @@ int dataframes__decode_list(struct dataframes_t *frames, volatile uint8_t* buffe
     bool found_whole_msg = false;
     while (!found_whole_msg) {
         // 1. try to find the header
-        for (int i = head_index; i < buffer_len; ++i) {
+        for (size_t i = head_index; i < buffer_len; ++i) {
             if (buffer[i] == frames->head.frame) {
                 head_index = i;
                 break;
@@ -460,11 +460,11 @@ int dataframes__decode_list(struct dataframes_t *frames, volatile uint8_t* buffe
         goto NOT_ENOUGH_DATA_CAPACITY;
     }
     frames->data.size = 0;
-    for (int i = 0; i < (data_index_end - data_index_start + 1); ++i) {
+    for (size_t i = 0; i < (data_index_end - data_index_start + 1); ++i) {
         frames->data.frames[i] = *(buffer + data_index_start + i);
         frames->data.size ++;
     }
-    for (int i = frames->data.size; i < frames->data.capacity; ++i) {
+    for (size_t i = frames->data.size; i < frames->data.capacity; ++i) {
         frames->data.frames[i] = '\0';
     }
     // Assume the msg is correct, check the checksum.
@@ -543,7 +543,7 @@ int dataframes__encode_list(struct dataframes_t *frames, volatile uint8_t* buffe
     buffer_index += sizeof(frames->head.frame);
     *(buffer + buffer_index) = frames->length.value; // 3.b. length
     buffer_index += sizeof(frames->length.value);
-    for (int i = 0; i < frames->data.size; ++i) {    // 3.c. data
+    for (size_t i = 0; i < frames->data.size; ++i) {    // 3.c. data
         *(buffer + buffer_index + i) = frames->data.frames[i];
     }
     buffer_index += frames->data.size;
@@ -579,7 +579,7 @@ int dataframes__setdata(struct dataframes_t *frames, const struct dataframes_lis
         }
     }
     else {
-        for (int i = 0; i < frames->data.capacity; ++i) {
+        for (size_t i = 0; i < frames->data.capacity; ++i) {
             frames->data.frames[i] = '\0';
         }
         frames->data.size = 0;
@@ -650,7 +650,7 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
 {
     *conv_len = 0;
     size_t conv_size = 0;
-    for (int i = 0; i < dataframes_list__getsize(l, false); ++i) {
+    for (size_t i = 0; i < dataframes_list__getsize(l, false); ++i) {
         struct dataframes_var_t *var = &l->list[i];
         size_t try_to_conv_len = 0;
         int tmp_ret = 0;
@@ -677,7 +677,7 @@ int dataframes_list__conv_to_buffer(const struct dataframes_list_t *l,
                 if (var->value.rawbuf.len > maxlen - conv_size) {
                     return DATAFRAMES__NOT_ENOUGH_BUFFER_CAPACITY;
                 }
-                for (int i = 0; i < var->value.rawbuf.len; ++i) {
+                for (size_t i = 0; i < var->value.rawbuf.len; ++i) {
                     *(uint8_t*)(buffer + conv_size + i) = var->value.rawbuf.buf[i];
                 }
                 conv_size += var->value.rawbuf.len;
@@ -772,7 +772,7 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
 {
     *decoded_len = 0;
     size_t pri_decoded_len = 0;
-    for (int i = 0; i < dataframes_list__getsize(l, false); ++i) {
+    for (size_t i = 0; i < dataframes_list__getsize(l, false); ++i) {
         struct dataframes_var_t *var = &(l->list[i]);
         size_t try_decoding_len = 0;
         int tmp_ret = 0;
@@ -804,7 +804,7 @@ int dataframes_list__conv_from_buffer(struct dataframes_list_t *l,
                     var->value.rawbuf.len = maxlen - pri_decoded_len;
                 }
                 var->value.rawbuf.buf = malloc(var->value.rawbuf.len);
-                for (int i = 0; i < var->value.rawbuf.len; ++i) {
+                for (size_t i = 0; i < var->value.rawbuf.len; ++i) {
                     var->value.rawbuf.buf[i]  = *(buffer + pri_decoded_len + i);
                 }
                 pri_decoded_len += var->value.rawbuf.len;

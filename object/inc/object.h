@@ -17,7 +17,7 @@ enum object_err_t {
 struct object_t {
     void* instance;
     size_t size;
-    void (* destroy)(void** instance, size_t* size);
+    void (* destroy)(void** instance);
 };
 
 // memory operation functions
@@ -34,17 +34,17 @@ int object_init(struct object_t *obj);
         object_set_pointer(obj, NULL, 0, purge_func) :  \
         object_set_pointer(obj, (void*)(&instance), sizeof(instance), purge_func) )
 int object_set_pointer(struct object_t *obj, void* instance, const size_t size,
-                       void (* destroy)(void** instance, size_t* size));
+                       void (* destroy)(void** instance));
 
 #define object_get(obj, type)   \
     (object_get_size(obj) == sizeof(type) ? (type*)object_get_instance(obj) : NULL)
 
 // raw function for above macros
 void* object_get_instance(struct object_t *obj);
-const size_t object_get_size(struct object_t *obj);
+size_t object_get_size(struct object_t *obj);
 
 #ifdef __cplusplus
-extern }
+}
 #endif
 
 #endif /* ifndef ZCCHEN_CLIBS__OBJECT_H */

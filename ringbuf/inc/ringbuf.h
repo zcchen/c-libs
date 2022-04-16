@@ -34,7 +34,7 @@ int ringbuf_push(volatile struct ringbuf_t *ringbuf,
 int ringbuf_pop(volatile struct ringbuf_t *ringbuf, uint8_t *linebuf, size_t linebuf_maxlen);
 
 #ifdef __cplusplus
-extern }
+}
 #endif
 
 #endif /* ifndef ZCCHEN_CLIBS__RINGBUF_H */

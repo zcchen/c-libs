@@ -29,7 +29,7 @@ int test_enumkv_list_find__at_normal_list(const size_t list_len, uint8_t key, in
         return 0;
     }
 
-    for (int i = 0; i < list_len; ++i) {
+    for (size_t i = 0; i < list_len; ++i) {
         enumkv_elem_print(&enumkv_list[i], NULL);
     }
 
@@ -70,7 +70,7 @@ int test_enumkv_list_find__at_not_found_list(const size_t list_len, uint8_t key,
         return 0;
     }
 
-    for (int i = 0; i < list_len; ++i) {
+    for (size_t i = 0; i < list_len; ++i) {
         enumkv_elem_print(&enumkv_list[i], NULL);
     }
     void *found_val = NULL;

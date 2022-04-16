@@ -23,22 +23,29 @@ int class_obj__setup(void* self, size_t size)
 {
     printf("-------------\n");
     printf(">>> setup...\n");
+    printf("obj: %p\n", self);
+    printf("size: %ld\n", size);
     printf("-------------\n");
     return 0;
 }
 
-int class_obj__clean(void* self, size_t size)
+int class_obj__clean(void* self)
 {
     printf("-------------\n");
-    printf(">>> clean...\n");
+    printf(">>> clean ...\n");
+    printf("obj: %p\n", self);
     printf("-------------\n");
     return 0;
 }
 
-int class_obj__func0(void* self, size_t size, void* param, size_t param_size)
+int class_obj__func0(void* self, size_t self_size, void* param, size_t param_size)
 {
     printf("-------------\n");
     printf(">>> func0...\n");
+    printf("class: %p\n", self);
+    printf("class_size: %ld\n", self_size);
+    printf("param: %p\n", param);
+    printf("param_size: %ld\n", param_size);
     printf("-------------\n");
     return 0;
 }

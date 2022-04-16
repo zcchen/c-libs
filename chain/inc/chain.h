@@ -88,7 +88,7 @@ struct chain_t* chainnode_create(struct chain_t* prev, struct chain_t* next,
 int chainnode_destroy(struct chain_t* node);
 
 #ifdef __cplusplus
-extern }
+}
 #endif
 
 #endif /* ifndef ZCCHEN_CLIBS__CHAIN_H */

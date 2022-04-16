@@ -27,7 +27,7 @@ struct class_t {
     struct {
         struct {
             int (* setup)(void* self, const size_t self_size);    // constructor
-            int (* clean)(void* self, const size_t self_size);    // deconstructor
+            int (* clean)(void* self);    // deconstructor
         } base;
         struct {
             int (* func[CLASS_MAX_USER_METHODS])(void* self, const size_t self_size,
@@ -54,7 +54,7 @@ int class_init(struct class_t *cls);
 int class_set_obj(struct class_t *cls, void* obj, const size_t size,
                   void (* destroy)(void **obj, size_t *size));
 int class_set_func_base(struct class_t *cls,
-                        int (* setup)(void*, const size_t), int (* clean)(void*, const size_t));
+                        int (* setup)(void*, const size_t), int (* clean)(void*));
 int class_set_func_user(struct class_t *cls, const size_t func_id,
                         int (* func)(void*, const size_t, void*, const size_t));
 
@@ -73,7 +73,7 @@ int class_call_func_user(struct class_t *cls, const size_t id, const bool includ
                          void* param, const size_t param_size);
 
 // return the inherit level from this cls to top.
-const size_t class_get_level(struct class_t *cls);
+size_t class_get_level(struct class_t *cls);
 
 struct class_t* class_get_parent(struct class_t *cls);
 
@@ -84,10 +84,10 @@ struct class_t* class_get_parent(struct class_t *cls);
 
 // NOTE: usually don't use the following methods.
 void* class_get_obj_instance(struct class_t *cls);
-const size_t class_get_obj_size(struct class_t *cls);
+size_t class_get_obj_size(struct class_t *cls);
 
 #ifdef __cplusplus
-extern }
+}
 #endif
 
 #endif /* ifndef ZCCHEN_CLIBS__CLASS_H */

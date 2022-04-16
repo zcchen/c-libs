@@ -9,7 +9,7 @@
 void print_buffer(volatile uint8_t* buf, const size_t s, const char* prompt)
 {
     printf("%s: ", prompt);
-    for (int i = 0; i < s; ++i) {
+    for (size_t i = 0; i < s; ++i) {
         printf("[0x%X] ", buf[i]);
     }
     printf("\n");
@@ -34,7 +34,7 @@ int test_dataframes__init_encode_decode(struct dataframes_list_t *data,
     size_t encoded_size = 0;
     size_t decoded_size = 0;
     volatile uint8_t buffer[buffer_size];
-    for (int i = 0; i < buffer_size; ++i) {
+    for (size_t i = 0; i < buffer_size; ++i) {
         buffer[i] = '\0';
     }
     print_buffer(buffer, 10, ">>> buffer");

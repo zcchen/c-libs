@@ -29,7 +29,7 @@ int test_enumkv_list_add__add_new_elem_at_length_N(const size_t list_len, uint8_
     printf("---- ret: <%d> ---------------------------------\n", ret);
 
     printf(">>> enum list added result: --------------------\n");
-    for (int i = 0; i < list_len; ++i) {
+    for (size_t i = 0; i < list_len; ++i) {
         enumkv_elem_print(&enumkv_list[i], NULL);
     }
 
@@ -63,7 +63,7 @@ int test_enumkv_list_add__add_existed_elem_at_length_N(const size_t list_len,
     printf("---- ret: <%d> ---------------------------------\n", ret);
 
     printf(">>> enum list added result: --------------------\n");
-    for (int i = 0; i < list_len; ++i) {
+    for (size_t i = 0; i < list_len; ++i) {
         enumkv_elem_print(&enumkv_list[i], NULL);
     }
 

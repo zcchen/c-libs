@@ -16,12 +16,13 @@ void object_print(const struct object_t *obj)
     printf("-------------------------------\n");
 }
 
-void obj_purge__print(void** instance, size_t *size)
+void obj_purge__print(void** instance)
 {
     printf(">>> purging print ...\n");
+    printf(">>> instance ptr is %p\n", *instance);
 }
 
-void obj_purge__free(void** instance, size_t *size)
+void obj_purge__free(void** instance)
 {
     printf(">>> purging free ...\n");
     free(*instance);

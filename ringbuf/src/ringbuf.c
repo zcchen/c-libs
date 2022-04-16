@@ -5,7 +5,7 @@ int ringbuf_init(volatile struct ringbuf_t *ringbuf)
     ringbuf->head = 0;
     ringbuf->tail = 0;
     ringbuf->error.byte = 0;
-    for (int i = 0; i < sizeof(ringbuf->buf); ++i) {
+    for (size_t i = 0; i < sizeof(ringbuf->buf); ++i) {
         ringbuf->buf[i] = '\0';
     }
     return 0;
@@ -28,7 +28,7 @@ int ringbuf_remain(const volatile struct ringbuf_t *ringbuf)
 int ringbuf_push(volatile struct ringbuf_t *ringbuf,
                  uint8_t *linebuf, size_t linebuf_maxlen, const bool force_flag)
 {
-    int i = 0;
+    size_t i = 0;
     if (ringbuf->tail + 1 == ringbuf->head || \
         (ringbuf->tail == sizeof(ringbuf->buf) - 1 && ringbuf->head == 0)) {
         if (!force_flag) {
@@ -57,7 +57,7 @@ int ringbuf_push(volatile struct ringbuf_t *ringbuf,
 
 int ringbuf_pop(volatile struct ringbuf_t *ringbuf, uint8_t *linebuf, size_t linebuf_maxlen)
 {
-    int i = 0;
+    size_t i = 0;
     if (ringbuf->tail == ringbuf->head) {
         return -1;
     }

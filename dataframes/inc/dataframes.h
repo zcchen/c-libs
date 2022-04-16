@@ -193,7 +193,7 @@ int dataframes__getdata(const struct dataframes_t *frames, struct dataframes_lis
 
 
 #ifdef __cplusplus
-extern }
+}
 #endif
 
 

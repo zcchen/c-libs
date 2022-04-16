@@ -39,8 +39,8 @@ void conv_data_print(const struct conv_t *d, const char *s)
 void uint8_hex_print(const uint8_t *d, size_t len)
 {
     printf("uint8_hex (%p): <%s>\n", d, (char*)d);
-    for (int i = 0; i < len; ++i) {
-        printf("  [%d]: 0x%x", i, d[i]);
+    for (size_t i = 0; i < len; ++i) {
+        printf("  [%ld]: 0x%x", i, d[i]);
     }
     printf("\n");
 }

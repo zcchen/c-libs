@@ -2,7 +2,7 @@
 
 int enumkv_list_init(struct enumkv_elem_t *enumkv_list, size_t maxlen)
 {
-    for (int i = 0; i < maxlen; ++i) {
+    for (size_t i = 0; i < maxlen; ++i) {
         enumkv_list[i].enum_k = 0;
         enumkv_list[i].value = NULL;
     }
@@ -14,7 +14,7 @@ int enumkv_list_add(struct enumkv_elem_t *enumkv_list, size_t maxlen, struct enu
     if (elem->enum_k <= 0) {
         return ENUMKV_ERR_KEY_INVALID;
     }
-    for (int i = 0; i < maxlen; ++i) {
+    for (size_t i = 0; i < maxlen; ++i) {
         if (enumkv_list[i].enum_k == elem->enum_k) {
             return ENUMKV_ERR_KEY_EXISTS;
         }
@@ -35,7 +35,7 @@ int enumkv_list_remove(struct enumkv_elem_t *enumkv_list, size_t maxlen, ENUMKV_
     if (key <= 0) {
         return ENUMKV_ERR_KEY_INVALID;
     }
-    for (int i = 0; i < maxlen; ++i) {
+    for (size_t i = 0; i < maxlen; ++i) {
         if (enumkv_list[i].enum_k == key) {
             enumkv_list[i].enum_k = 0;
             enumkv_list[i].value = NULL;
@@ -52,7 +52,7 @@ int enumkv_list_find(const struct enumkv_elem_t *enumkv_list, size_t maxlen,
                      ENUMKV_KEY_TYPE key, void **ret)
 {
     *ret = NULL;
-    for (int i = 0; i < maxlen; ++i) {
+    for (size_t i = 0; i < maxlen; ++i) {
         if (key == enumkv_list[i].enum_k) {
             *ret = enumkv_list[i].value;
             return ENUMKV_OK;

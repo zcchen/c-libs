@@ -19,7 +19,7 @@ void object_destroy(struct object_t *obj)
         return;
     }
     if (obj->destroy) {
-        obj->destroy(&obj->instance, &obj->size);
+        obj->destroy(&obj->instance);
         obj->destroy = NULL;
     }
     if (obj->instance) {
@@ -42,7 +42,7 @@ int object_init(struct object_t *obj)
 }
 
 int object_set_pointer(struct object_t *obj, void* instance, const size_t size,
-                       void (* destroy)(void** instance, size_t* size))
+                       void (* destroy)(void** instance))
 {
     if (!obj) {
         return OBJECT_ERR_NULL_POINTER;
@@ -70,7 +70,7 @@ void* object_get_instance(struct object_t *obj)
     return obj->instance;
 }
 
-const size_t object_get_size(struct object_t *obj)
+size_t object_get_size(struct object_t *obj)
 {
     return obj->size;
 }

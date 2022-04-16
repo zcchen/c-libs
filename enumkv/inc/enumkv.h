@@ -33,7 +33,7 @@ int enumkv_list_find(const struct enumkv_elem_t *enumkv_list, size_t maxlen,
                      ENUMKV_KEY_TYPE key, void **ret);
 
 #ifdef __cplusplus
-extern }
+}
 #endif
 
 #endif /* ifndef ZCCHEN_CLIBS__ENUMKY_H */

@@ -66,7 +66,7 @@ int class_set_obj(struct class_t *cls, void* obj, const size_t size,
 }
 
 int class_set_func_base(struct class_t *cls,
-                        int (* setup)(void*, const size_t), int (* clean)(void*, const size_t))
+                        int (* setup)(void*, const size_t), int (* clean)(void*))
 {
     cls->status.bits.lock = 1;
     cls->methods.base.setup = setup;
@@ -94,12 +94,12 @@ int class_fork_list(struct class_t *base, void* new_obj_from_base,
     if (base_level + 1 > list_size) {
         return CLASS_ERR_MEMORY_HAVE_NOT_ALLOCATED;
     }
-    for (int i = 0; i < list_size; ++i) {
+    for (size_t i = 0; i < list_size; ++i) {
         class_init(&fork_list[i]);  // init all, including 1st one.
     }
     struct class_t *walk_base = base;
     struct class_t *walk_fork = &fork_list[0];
-    for (int i = 1; i < list_size && walk_base; ++i) {
+    for (size_t i = 1; i < list_size && walk_base; ++i) {
         walk_fork->parent = &fork_list[i];
         memcpy(walk_fork->parent, walk_base, sizeof(struct class_t));
         walk_fork->parent->obj = new_obj_from_base;
@@ -152,7 +152,7 @@ int class_call_func_clean(struct class_t *cls)
     while (walk_cls) {
         int ret = 0;
         if (walk_cls->methods.base.clean) {
-            ret = walk_cls->methods.base.clean(&walk_cls->obj, walk_cls->size);
+            ret = walk_cls->methods.base.clean(&walk_cls->obj);
             if (ret) {
                 return ret;
             }
@@ -193,7 +193,7 @@ int class_call_func_user(struct class_t *cls, const size_t id, const bool includ
     return CLASS_OK;
 }
 
-const size_t class_get_level(struct class_t *cls)
+size_t class_get_level(struct class_t *cls)
 {
     size_t ret = 0;
     struct class_t *walk_cls = cls;
@@ -214,7 +214,7 @@ void* class_get_obj_instance(struct class_t *cls)
     return cls->obj;
 }
 
-const size_t class_get_obj_size(struct class_t *cls)
+size_t class_get_obj_size(struct class_t *cls)
 {
     return cls->size;
 }
