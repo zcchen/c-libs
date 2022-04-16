@@ -1,10 +1,11 @@
 BUILD_DIR   = build
+INSTALL_DIR = install
 
 pwd         = $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 
 MAKEFLAGS  += --no-print-directory
 
-CMAKEFLAGS  =
+CMAKEFLAGS  = -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR)
 
 .PHONY:     all
 .PHONY:     _all
