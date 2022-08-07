@@ -1,0 +1,22 @@
+#ifndef ZCCHEN_CLIBS__VERSION_H_GENERATED
+#define ZCCHEN_CLIBS__VERSION_H_GENERATED
+
+#ifndef ZCCHEN_CLIBS__VERSION_MAJOR
+#define ZCCHEN_CLIBS__VERSION_MAJOR @version_MAJOR@
+#endif
+
+#ifndef ZCCHEN_CLIBS__VERSION_MINOR
+#define ZCCHEN_CLIBS__VERSION_MINOR @version_MINOR@
+#endif
+
+#ifndef ZCCHEN_CLIBS__VERSION_PATCH
+#define ZCCHEN_CLIBS__VERSION_PATCH @version_PATCH@
+#endif
+
+
+int version_major();
+int version_minor();
+int version_patch();
+const char* version_full();
+
+#endif /* ifndef ZCCHEN_CLIBS__VERSION_H_GENERATED */

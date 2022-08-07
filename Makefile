@@ -6,6 +6,7 @@ pwd         = $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 MAKEFLAGS  += --no-print-directory
 
 CMAKEFLAGS  = -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR)
+#CMAKEFLAGS += -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
 
 .PHONY:     all
 .PHONY:     _all
